@@ -6,6 +6,7 @@ export const colors = {
   brand: '#006c4a',
   brandBright: '#00C389',
   brandMuted: 'rgba(0, 108, 74, 0.12)',
+  primary: '#181919',
   secondaryContainer: '#61f9bb',
   onSecondaryContainer: '#00714e',
   onSecondaryFixedVariant: '#005237',

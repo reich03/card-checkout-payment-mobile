@@ -1,6 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { MOCK_SAVED_CARDS } from '../../services/mockCards';
+import type { MockTransactionResult } from '../../services/mockPaymentApi';
+import type { PersistedPayment } from '../../services/secureStorage';
 import type { SavedCard } from '../../types/payment';
+
+export type PaymentFlowStatus =
+  | 'idle'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'pending';
 
 export interface PaymentState {
   savedCards: SavedCard[];
@@ -8,8 +17,8 @@ export interface PaymentState {
   selectedCard: SavedCard | null;
   customerEmail: string | null;
   installments: number;
-  transaction: unknown | null;
-  status: 'idle' | 'processing' | 'succeeded' | 'failed';
+  lastTransaction: MockTransactionResult | null;
+  status: PaymentFlowStatus;
   error: string | null;
 }
 
@@ -19,7 +28,7 @@ const initialState: PaymentState = {
   selectedCard: null,
   customerEmail: null,
   installments: 1,
-  transaction: null,
+  lastTransaction: null,
   status: 'idle',
   error: null,
 };
@@ -54,6 +63,50 @@ const paymentSlice = createSlice({
     clearPaymentMethod(state) {
       state.selectedCard = null;
     },
+    paymentStarted(state) {
+      state.status = 'processing';
+      state.error = null;
+    },
+    paymentSucceeded(state, action: PayloadAction<MockTransactionResult>) {
+      state.lastTransaction = action.payload;
+      if (action.payload.status === 'APPROVED') {
+        state.status = 'succeeded';
+        state.error = null;
+        return;
+      }
+      if (action.payload.status === 'PENDING') {
+        state.status = 'pending';
+        state.error = null;
+        return;
+      }
+      state.status = 'failed';
+      state.error =
+        action.payload.message ?? 'No se pudo completar el pago';
+    },
+    paymentFailed(state, action: PayloadAction<string>) {
+      state.status = 'failed';
+      state.error = action.payload;
+    },
+    paymentResetStatus(state) {
+      state.status = 'idle';
+      state.error = null;
+    },
+    clearLastTransaction(state) {
+      state.lastTransaction = null;
+      state.status = 'idle';
+      state.error = null;
+    },
+    hydratePayment(state, action: PayloadAction<PersistedPayment>) {
+      const payload = action.payload;
+      if (payload.savedCards?.length) {
+        state.savedCards = payload.savedCards;
+      }
+      state.draftSelectedCardId =
+        payload.draftSelectedCardId ?? state.draftSelectedCardId;
+      state.selectedCard = payload.selectedCard ?? null;
+      state.customerEmail = payload.customerEmail ?? null;
+      state.installments = payload.installments ?? 1;
+    },
   },
 });
 
@@ -62,6 +115,12 @@ export const {
   confirmPaymentMethod,
   addSavedCard,
   clearPaymentMethod,
+  paymentStarted,
+  paymentSucceeded,
+  paymentFailed,
+  paymentResetStatus,
+  clearLastTransaction,
+  hydratePayment,
 } = paymentSlice.actions;
 
 export const selectSelectedCard = (state: { payment: PaymentState }) =>
@@ -78,5 +137,14 @@ export const selectCustomerEmail = (state: { payment: PaymentState }) =>
 
 export const selectInstallments = (state: { payment: PaymentState }) =>
   state.payment.installments;
+
+export const selectLastTransaction = (state: { payment: PaymentState }) =>
+  state.payment.lastTransaction;
+
+export const selectPaymentStatus = (state: { payment: PaymentState }) =>
+  state.payment.status;
+
+export const selectPaymentError = (state: { payment: PaymentState }) =>
+  state.payment.error;
 
 export default paymentSlice.reducer;
