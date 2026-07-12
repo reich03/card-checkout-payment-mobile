@@ -1,6 +1,6 @@
-# Credit Card Checkout — Mobile App
+# GreenPay — Mobile App
 
-Cross-platform mobile application built with **Expo SDK 57** + **React Native 0.86** + **TypeScript** in a **hybrid** setup: Expo toolchain with committed `android/` and `ios/` folders so you can build from Expo CLI **or** Gradle/Xcode directly.
+Cross-platform mobile checkout built with **Expo SDK 57** + **React Native 0.86** + **TypeScript**. Brand: **GreenPay** — pagos simples y seguros.
 
 ## Tech Stack
 

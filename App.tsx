@@ -1,35 +1,48 @@
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Provider } from 'react-redux';
+import { RootNavigator } from './src/navigation/RootNavigator';
+import { store } from './src/store';
+import { colors } from './src/theme/colors';
 
 export default function App() {
-  return (
-    <SafeAreaProvider>
-      <View style={styles.container}>
-        <Text style={styles.title}>PayCheckoutApp</Text>
-        <Text style={styles.subtitle}>Credit card checkout — Expo ready</Text>
-        <StatusBar style="auto" />
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.boot}>
+        <ActivityIndicator color={colors.brand} size="large" />
       </View>
-    </SafeAreaProvider>
+    );
+  }
+
+  return (
+    <GestureHandlerRootView style={styles.root}>
+      <Provider store={store}>
+        <SafeAreaProvider>
+          <StatusBar style="dark" />
+          <RootNavigator />
+        </SafeAreaProvider>
+      </Provider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  boot: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
+    backgroundColor: colors.background,
   },
 });

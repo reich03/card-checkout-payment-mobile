@@ -1,0 +1,59 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native secrets / signing
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+!debug.keystore
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# testing
+/coverage
+
+# Android build artifacts (keep /android source in repo)
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+android/*.iml
+*.hprof
+.cxx/
+
+# iOS build artifacts (keep /ios source in repo)
+ios/build/
+ios/Pods/
+ios/Podfile.lock
+**/xcuserdata/
+**/.xcode.env.local
+*.xcuserstate
+*.ipa
+DerivedData/
