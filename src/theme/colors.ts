@@ -1,13 +1,21 @@
 export const colors = {
   background: '#fdf8f8',
   surface: '#fdf8f8',
-  brand: '#00C389',
-  brandMuted: 'rgba(0, 195, 137, 0.1)',
+  surfaceContainerLow: '#f7f3f2',
+  surfaceContainer: '#f1edec',
+  brand: '#006c4a',
+  brandBright: '#00C389',
+  brandMuted: 'rgba(0, 108, 74, 0.12)',
+  secondaryContainer: '#61f9bb',
+  onSecondaryContainer: '#00714e',
+  onSecondaryFixedVariant: '#005237',
   onSurface: '#1c1b1b',
   onSurfaceVariant: '#444748',
   outline: '#747878',
+  outlineVariant: '#c4c7c7',
   white: '#ffffff',
   placeholder: '#e5e2e1',
+  cardShadow: 'rgba(0, 0, 0, 0.08)',
 } as const;
 
 export const spacing = {
@@ -17,4 +25,11 @@ export const spacing = {
   lg: 24,
   xl: 32,
   marginMobile: 20,
+} as const;
+
+export const radii = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  full: 9999,
 } as const;
