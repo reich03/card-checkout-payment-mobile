@@ -1,4 +1,5 @@
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,8 +29,10 @@ export default function App() {
     <GestureHandlerRootView style={styles.root}>
       <Provider store={store}>
         <SafeAreaProvider>
-          <StatusBar style="dark" />
-          <RootNavigator />
+          <BottomSheetModalProvider>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </BottomSheetModalProvider>
         </SafeAreaProvider>
       </Provider>
     </GestureHandlerRootView>

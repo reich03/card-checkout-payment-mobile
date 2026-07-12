@@ -32,13 +32,17 @@ jest.mock('react-native-gesture-handler', () => {
   };
 });
 
-jest.mock('react-native-screens', () => {
-  const { View } = require('react-native');
+jest.mock('@gorhom/bottom-sheet', () => {
+  const React = require('react');
+  const { View, ScrollView } = require('react-native');
   return {
-    enableScreens: jest.fn(),
-    Screen: View,
-    ScreenContainer: View,
-    NativeScreen: View,
-    NativeScreenContainer: View,
+    BottomSheetModal: React.forwardRef((props: { children?: React.ReactNode }, _ref: unknown) =>
+      React.createElement(View, null, props.children),
+    ),
+    BottomSheetModalProvider: ({ children }: { children: React.ReactNode }) =>
+      children,
+    BottomSheetBackdrop: View,
+    BottomSheetView: View,
+    BottomSheetScrollView: ScrollView,
   };
 });
