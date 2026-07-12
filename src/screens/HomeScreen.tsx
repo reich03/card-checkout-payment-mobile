@@ -1,10 +1,186 @@
-import { PlaceholderScreen } from './PlaceholderScreen';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomNavBar } from '../components/BottomNavBar';
+import { HomeHeader } from '../components/HomeHeader';
+import { HomeSkeleton } from '../components/HomeSkeleton';
+import { ProductCard } from '../components/ProductCard';
+import { PromoBanner } from '../components/PromoBanner';
+import { SearchBar } from '../components/SearchBar';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { addToCart, selectCartCount } from '../store/slices/cartSlice';
+import { loadProducts } from '../store/slices/productsSlice';
+import type { RootStackParamList } from '../types/navigation';
+import type { Product } from '../types/product';
+import { colors, spacing } from '../theme/colors';
 
-export function HomeScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+
+export function HomeScreen({ navigation }: Props) {
+  const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const [query, setQuery] = useState('');
+
+  const { items, status, error } = useAppSelector((state) => state.products);
+  const cartCount = useAppSelector(selectCartCount);
+
+  useEffect(() => {
+    if (status === 'idle') {
+      void dispatch(loadProducts());
+    }
+  }, [dispatch, status]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) {
+      return items;
+    }
+
+    return items.filter(
+      (product) =>
+        product.name.toLowerCase().includes(normalized) ||
+        product.description.toLowerCase().includes(normalized),
+    );
+  }, [items, query]);
+
+  const cardWidth = (width - spacing.marginMobile * 2 - spacing.md) / 2;
+
+  const goToCart = () => navigation.navigate('Cart');
+
+  const handleAdd = (product: Product) => {
+    dispatch(addToCart(product));
+  };
+
   return (
-    <PlaceholderScreen
-      title="Home"
-      subtitle="Product catalog — coming in M-03"
-    />
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      <HomeHeader count={cartCount} onPressCart={goToCart} />
+
+      {status === 'loading' || status === 'idle' ? (
+        <HomeSkeleton />
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: 96 + insets.bottom },
+          ]}
+          ListHeaderComponent={
+            <View>
+              <View style={styles.searchWrap}>
+                <SearchBar value={query} onChangeText={setQuery} />
+              </View>
+              <View style={styles.bannerWrap}>
+                <PromoBanner />
+              </View>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Nuestros Productos</Text>
+                <Text style={styles.tune}>⚙︎</Text>
+              </View>
+              {status === 'failed' ? (
+                <View style={styles.errorBox}>
+                  <Text style={styles.errorText}>{error}</Text>
+                  <Pressable
+                    onPress={() => void dispatch(loadProducts())}
+                    style={styles.retry}
+                  >
+                    <Text style={styles.retryText}>Reintentar</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
+          }
+          ListEmptyComponent={
+            status === 'succeeded' ? (
+              <Text style={styles.empty}>No hay productos para “{query}”.</Text>
+            ) : null
+          }
+          renderItem={({ item }) => (
+            <View style={{ width: cardWidth }}>
+              <ProductCard product={item} onAdd={handleAdd} />
+            </View>
+          )}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+
+      <BottomNavBar active="home" onHome={() => undefined} onCart={goToCart} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  listContent: {
+    paddingHorizontal: spacing.marginMobile,
+    paddingTop: spacing.md,
+  },
+  searchWrap: {
+    marginBottom: spacing.lg,
+  },
+  bannerWrap: {
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: '600',
+    color: colors.onSurface,
+  },
+  tune: {
+    fontSize: 18,
+    color: colors.outline,
+  },
+  row: {
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  empty: {
+    textAlign: 'center',
+    color: colors.onSurfaceVariant,
+    marginTop: spacing.lg,
+    fontFamily: 'Inter_400Regular',
+  },
+  errorBox: {
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: 12,
+    backgroundColor: colors.surfaceContainerLow,
+  },
+  errorText: {
+    color: colors.onSurfaceVariant,
+    marginBottom: spacing.sm,
+  },
+  retry: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.brand,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: colors.white,
+    fontWeight: '700',
+  },
+});
