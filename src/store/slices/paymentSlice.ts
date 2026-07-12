@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { MOCK_SAVED_CARDS } from '../../services/mockCards';
+import type { MockTransactionResult } from '../../services/mockPaymentApi';
 import type { SavedCard } from '../../types/payment';
 
 export interface PaymentState {
@@ -8,7 +9,7 @@ export interface PaymentState {
   selectedCard: SavedCard | null;
   customerEmail: string | null;
   installments: number;
-  transaction: unknown | null;
+  lastTransaction: MockTransactionResult | null;
   status: 'idle' | 'processing' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -19,7 +20,7 @@ const initialState: PaymentState = {
   selectedCard: null,
   customerEmail: null,
   installments: 1,
-  transaction: null,
+  lastTransaction: null,
   status: 'idle',
   error: null,
 };
@@ -54,6 +55,23 @@ const paymentSlice = createSlice({
     clearPaymentMethod(state) {
       state.selectedCard = null;
     },
+    paymentStarted(state) {
+      state.status = 'processing';
+      state.error = null;
+    },
+    paymentSucceeded(state, action: PayloadAction<MockTransactionResult>) {
+      state.status = 'succeeded';
+      state.lastTransaction = action.payload;
+      state.error = null;
+    },
+    paymentFailed(state, action: PayloadAction<string>) {
+      state.status = 'failed';
+      state.error = action.payload;
+    },
+    paymentResetStatus(state) {
+      state.status = 'idle';
+      state.error = null;
+    },
   },
 });
 
@@ -62,6 +80,10 @@ export const {
   confirmPaymentMethod,
   addSavedCard,
   clearPaymentMethod,
+  paymentStarted,
+  paymentSucceeded,
+  paymentFailed,
+  paymentResetStatus,
 } = paymentSlice.actions;
 
 export const selectSelectedCard = (state: { payment: PaymentState }) =>
@@ -78,5 +100,14 @@ export const selectCustomerEmail = (state: { payment: PaymentState }) =>
 
 export const selectInstallments = (state: { payment: PaymentState }) =>
   state.payment.installments;
+
+export const selectLastTransaction = (state: { payment: PaymentState }) =>
+  state.payment.lastTransaction;
+
+export const selectPaymentStatus = (state: { payment: PaymentState }) =>
+  state.payment.status;
+
+export const selectPaymentError = (state: { payment: PaymentState }) =>
+  state.payment.error;
 
 export default paymentSlice.reducer;

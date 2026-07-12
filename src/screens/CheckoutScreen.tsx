@@ -13,6 +13,7 @@ import { CardBrandBadge } from '../components/CardBrandBadge';
 import { CardFormSheet } from '../components/CardFormSheet';
 import { CardSelectionSheet } from '../components/CardSelectionSheet';
 import { OrderSummaryItemCard } from '../components/OrderSummaryItemCard';
+import { PaymentSummarySheet } from '../components/PaymentSummarySheet';
 import { useAppSelector } from '../store/hooks';
 import { selectCartCount, selectCartItems, selectCartTotal } from '../store/slices/cartSlice';
 import { selectSelectedCard } from '../store/slices/paymentSlice';
@@ -26,6 +27,7 @@ export function CheckoutScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const selectionSheetRef = useRef<BottomSheetModal>(null);
   const formSheetRef = useRef<BottomSheetModal>(null);
+  const summarySheetRef = useRef<BottomSheetModal>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -76,6 +78,17 @@ export function CheckoutScreen({ navigation }: Props) {
     closeFormSheet();
     setSheetOpen(false);
   };
+
+  const openSummarySheet = useCallback(() => {
+    setSheetOpen(true);
+    summarySheetRef.current?.present();
+  }, []);
+
+  const handlePaid = useCallback(() => {
+    summarySheetRef.current?.dismiss();
+    setSheetOpen(false);
+    navigation.navigate('TransactionResult');
+  }, [navigation]);
 
   const canPay = Boolean(selectedCard) && cartCount > 0;
 
@@ -189,7 +202,7 @@ export function CheckoutScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           disabled={!canPay}
-          onPress={() => navigation.navigate('PaymentSummary')}
+          onPress={openSummarySheet}
           style={[styles.payButton, !canPay && styles.payButtonDisabled]}
         >
           <Text style={styles.payText}>
@@ -208,6 +221,11 @@ export function CheckoutScreen({ navigation }: Props) {
         ref={formSheetRef}
         onCompleted={handleFormCompleted}
         onRequestClose={closeFormSheet}
+        onDismiss={() => setSheetOpen(false)}
+      />
+      <PaymentSummarySheet
+        ref={summarySheetRef}
+        onPaid={handlePaid}
         onDismiss={() => setSheetOpen(false)}
       />
     </View>
