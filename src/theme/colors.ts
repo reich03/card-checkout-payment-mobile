@@ -16,6 +16,8 @@ export const colors = {
   white: '#ffffff',
   placeholder: '#e5e2e1',
   cardShadow: 'rgba(0, 0, 0, 0.08)',
+  error: '#ba1a1a',
+  errorContainer: '#ffdad6',
 } as const;
 
 export const spacing = {
