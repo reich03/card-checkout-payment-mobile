@@ -1,7 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { MOCK_SAVED_CARDS } from '../../services/mockCards';
 import type { MockTransactionResult } from '../../services/mockPaymentApi';
+import type { PersistedPayment } from '../../services/secureStorage';
 import type { SavedCard } from '../../types/payment';
+
+export type PaymentFlowStatus =
+  | 'idle'
+  | 'processing'
+  | 'succeeded'
+  | 'failed'
+  | 'pending';
 
 export interface PaymentState {
   savedCards: SavedCard[];
@@ -10,7 +18,7 @@ export interface PaymentState {
   customerEmail: string | null;
   installments: number;
   lastTransaction: MockTransactionResult | null;
-  status: 'idle' | 'processing' | 'succeeded' | 'failed';
+  status: PaymentFlowStatus;
   error: string | null;
 }
 
@@ -60,9 +68,20 @@ const paymentSlice = createSlice({
       state.error = null;
     },
     paymentSucceeded(state, action: PayloadAction<MockTransactionResult>) {
-      state.status = 'succeeded';
       state.lastTransaction = action.payload;
-      state.error = null;
+      if (action.payload.status === 'APPROVED') {
+        state.status = 'succeeded';
+        state.error = null;
+        return;
+      }
+      if (action.payload.status === 'PENDING') {
+        state.status = 'pending';
+        state.error = null;
+        return;
+      }
+      state.status = 'failed';
+      state.error =
+        action.payload.message ?? 'No se pudo completar el pago';
     },
     paymentFailed(state, action: PayloadAction<string>) {
       state.status = 'failed';
@@ -71,6 +90,22 @@ const paymentSlice = createSlice({
     paymentResetStatus(state) {
       state.status = 'idle';
       state.error = null;
+    },
+    clearLastTransaction(state) {
+      state.lastTransaction = null;
+      state.status = 'idle';
+      state.error = null;
+    },
+    hydratePayment(state, action: PayloadAction<PersistedPayment>) {
+      const payload = action.payload;
+      if (payload.savedCards?.length) {
+        state.savedCards = payload.savedCards;
+      }
+      state.draftSelectedCardId =
+        payload.draftSelectedCardId ?? state.draftSelectedCardId;
+      state.selectedCard = payload.selectedCard ?? null;
+      state.customerEmail = payload.customerEmail ?? null;
+      state.installments = payload.installments ?? 1;
     },
   },
 });
@@ -84,6 +119,8 @@ export const {
   paymentSucceeded,
   paymentFailed,
   paymentResetStatus,
+  clearLastTransaction,
+  hydratePayment,
 } = paymentSlice.actions;
 
 export const selectSelectedCard = (state: { payment: PaymentState }) =>

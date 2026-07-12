@@ -67,6 +67,9 @@ const cartSlice = createSlice({
     clearCart(state) {
       state.items = [];
     },
+    hydrateCart(state, action: PayloadAction<{ items: CartItem[] }>) {
+      state.items = action.payload.items ?? [];
+    },
   },
 });
 
@@ -76,6 +79,7 @@ export const {
   decrementQuantity,
   removeFromCart,
   clearCart,
+  hydrateCart,
 } = cartSlice.actions;
 
 export const selectCartItems = (state: { cart: CartState }) => state.cart.items;

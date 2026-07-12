@@ -93,7 +93,10 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
             quantity: item.quantity,
             unitPrice: item.product.price,
           })),
-        });
+        }, {
+            outcome: 'DECLINED',
+          },
+        );
 
         dispatch(paymentSucceeded(result));
         setProcessing(false);

@@ -1,10 +1,434 @@
-import { PlaceholderScreen } from './PlaceholderScreen';
+import { useEffect, useMemo, useRef } from 'react';
+import {
+  Alert,
+  Animated,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { clearCart } from '../store/slices/cartSlice';
+import {
+  clearLastTransaction,
+  selectLastTransaction,
+  selectPaymentError,
+} from '../store/slices/paymentSlice';
+import type { RootStackParamList } from '../types/navigation';
+import { formatCop } from '../utils/formatCurrency';
+import { colors, radii, spacing } from '../theme/colors';
 
-export function TransactionResultScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'TransactionResult'>;
+
+type ResultVariant = 'success' | 'error' | 'pending';
+
+function formatResultDate(iso?: string): string {
+  const date = iso ? new Date(iso) : new Date();
+  return date.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export function TransactionResultScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
+  const transaction = useAppSelector(selectLastTransaction);
+  const paymentError = useAppSelector(selectPaymentError);
+
+  const scale = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  const variant: ResultVariant = useMemo(() => {
+    if (!transaction) {
+      return paymentError ? 'error' : 'success';
+    }
+    if (transaction.status === 'APPROVED') {
+      return 'success';
+    }
+    if (transaction.status === 'PENDING') {
+      return 'pending';
+    }
+    return 'error';
+  }, [paymentError, transaction]);
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 6,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 320,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [opacity, scale]);
+
+  const amount = transaction?.amount ?? 0;
+  const reference = transaction?.paymentRef ?? '—';
+  const dateLabel = formatResultDate(transaction?.createdAt);
+
+  const copy = {
+    success: {
+      title: '¡Pago exitoso!',
+      subtitle: 'Tu transacción ha sido procesada con éxito.',
+      titleColor: colors.brand,
+      iconBg: 'rgba(97, 249, 187, 0.2)',
+      icon: '✓',
+      iconColor: colors.brandBright,
+      primaryLabel: 'Descargar Recibo',
+      secondaryLabel: 'Volver a la tienda',
+      footer: 'Recibirás un correo electrónico con los detalles del pago.',
+    },
+    error: {
+      title: 'Pago rechazado',
+      subtitle:
+        transaction?.message ??
+        paymentError ??
+        'No pudimos procesar tu pago. Por favor, intenta de nuevo.',
+      titleColor: colors.error,
+      iconBg: 'rgba(186, 26, 26, 0.12)',
+      icon: '✕',
+      iconColor: colors.error,
+      primaryLabel: 'Reintentar pago',
+      secondaryLabel: 'Volver a la tienda',
+      footer: 'Ningún cargo fue aplicado a tu tarjeta.',
+    },
+    pending: {
+      title: 'Pago en proceso',
+      subtitle:
+        transaction?.message ??
+        'Estamos confirmando tu pago. Esto puede tomar unos minutos.',
+      titleColor: '#c47a00',
+      iconBg: 'rgba(196, 122, 0, 0.12)',
+      icon: '⏱',
+      iconColor: '#c47a00',
+      primaryLabel: 'Entendido',
+      secondaryLabel: 'Volver a la tienda',
+      footer: 'Te avisaremos cuando el estado se actualice.',
+    },
+  }[variant];
+
+  const goHome = () => {
+    if (variant === 'success') {
+      dispatch(clearCart());
+    }
+    dispatch(clearLastTransaction());
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Home' }],
+    });
+  };
+
+  const handlePrimary = () => {
+    if (variant === 'success') {
+      Alert.alert(
+        'Recibo',
+        'La descarga del recibo estará disponible cuando el backend esté en AWS (mock).',
+      );
+      return;
+    }
+    if (variant === 'error') {
+      dispatch(clearLastTransaction());
+      navigation.navigate('Checkout');
+      return;
+    }
+    goHome();
+  };
+
   return (
-    <PlaceholderScreen
-      title="Transaction Result"
-      subtitle="Success / error / pending — coming in M-08"
-    />
+    <View
+      style={[
+        styles.screen,
+        {
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            opacity,
+            transform: [{ scale }],
+          },
+        ]}
+      >
+        <View style={[styles.iconRing, { backgroundColor: copy.iconBg }]}>
+          <View
+            style={[
+              styles.iconCircle,
+              {
+                borderColor: copy.iconColor,
+                backgroundColor:
+                  variant === 'success' ? colors.brandBright : 'transparent',
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.iconGlyph,
+                {
+                  color:
+                    variant === 'success' ? colors.white : copy.iconColor,
+                },
+              ]}
+            >
+              {copy.icon}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.heading}>
+          <Text style={[styles.title, { color: copy.titleColor }]}>
+            {copy.title}
+          </Text>
+          <Text style={styles.subtitle}>{copy.subtitle}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.amountRow}>
+            <Text style={styles.amountLabel}>Monto</Text>
+            <Text style={styles.amountValue}>{formatCop(amount)} COP</Text>
+          </View>
+
+          <View style={styles.metaGrid}>
+            <View style={styles.metaCol}>
+              <Text style={styles.metaLabel}>
+                {variant === 'error' ? 'Estado' : 'Referencia'}
+              </Text>
+              <Text style={styles.metaValue}>
+                {variant === 'error' ? 'Rechazado' : reference}
+              </Text>
+            </View>
+            <View style={styles.metaCol}>
+              <Text style={styles.metaLabel}>Fecha</Text>
+              <Text style={styles.metaValue}>{dateLabel}</Text>
+            </View>
+          </View>
+
+          {variant === 'success' ? (
+            <View style={styles.secureBadge}>
+              <Text style={styles.secureIcon}>🛡</Text>
+              <Text style={styles.secureText}>
+                Transacción segura por GreenPay
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={handlePrimary}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.primaryText}>
+              {variant === 'success' ? '⬇  ' : ''}
+              {copy.primaryLabel}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={goHome}
+            style={({ pressed }) => [
+              styles.secondaryButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.secondaryText}>{copy.secondaryLabel}</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.footer}>{copy.footer}</Text>
+      </Animated.View>
+
+      <View style={styles.bottomAccent} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.marginMobile,
+    justifyContent: 'center',
+  },
+  content: {
+    alignItems: 'center',
+    gap: spacing.xl,
+  },
+  iconRing: {
+    width: 128,
+    height: 128,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: radii.full,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconGlyph: {
+    fontSize: 40,
+    fontWeight: '700',
+    fontFamily: 'Inter_700Bold',
+  },
+  heading: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  title: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.onSurfaceVariant,
+    textAlign: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(196, 199, 199, 0.5)',
+    padding: spacing.lg,
+    gap: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.outlineVariant,
+  },
+  amountLabel: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: colors.onSurfaceVariant,
+  },
+  amountValue: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: '700',
+    color: colors.onSurface,
+  },
+  metaGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  metaCol: {
+    flex: 1,
+    gap: 4,
+  },
+  metaLabel: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: colors.onSurfaceVariant,
+  },
+  metaValue: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.onSurface,
+  },
+  secureBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: radii.md,
+    padding: spacing.sm,
+  },
+  secureIcon: {
+    fontSize: 16,
+  },
+  secureText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: colors.onSecondaryContainer,
+  },
+  actions: {
+    width: '100%',
+    gap: spacing.md,
+  },
+  primaryButton: {
+    height: 48,
+    borderRadius: radii.lg,
+            backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryText: {
+    color: colors.white,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    height: 48,
+    borderRadius: radii.lg,
+    borderWidth: 2,
+    borderColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryText: {
+    color: colors.brand,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  pressed: {
+    transform: [{ scale: 0.97 }],
+  },
+  footer: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    color: colors.outline,
+    textAlign: 'center',
+  },
+  bottomAccent: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 3,
+    backgroundColor: colors.brand,
+    opacity: 0.35,
+  },
+});
