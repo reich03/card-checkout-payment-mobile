@@ -1,18 +1,22 @@
 {
   "expo": {
-    "name": "PayCheckoutApp",
+    "name": "GreenPay",
     "slug": "paycheckoutapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "plugins": [
+      "expo-font",
+      "expo-asset"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.paycheckoutapp"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#fdf8f8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
