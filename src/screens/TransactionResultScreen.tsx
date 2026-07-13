@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRefreshTransactionMutation } from '../api/hooks/useRefreshTransactionMutation';
+import { useOpenReceiptMutation } from '../api/hooks/useOpenReceiptMutation';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearCart } from '../store/slices/cartSlice';
 import {
@@ -45,7 +46,9 @@ export function TransactionResultScreen({ navigation }: Props) {
   const transaction = useAppSelector(selectLastTransaction);
   const paymentError = useAppSelector(selectPaymentError);
   const refreshTransaction = useRefreshTransactionMutation();
+  const openReceipt = useOpenReceiptMutation();
   const refreshing = refreshTransaction.isPending;
+  const openingReceipt = openReceipt.isPending;
 
   const scale = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -188,10 +191,19 @@ export function TransactionResultScreen({ navigation }: Props) {
 
   const handlePrimary = () => {
     if (variant === 'success') {
-      Alert.alert(
-        'Recibo',
-        'La descarga del recibo estará disponible pronto.',
-      );
+      if (!transaction?.id || openingReceipt) {
+        return;
+      }
+      openReceipt.mutate(transaction.id, {
+        onError: (error) => {
+          Alert.alert(
+            'No se pudo abrir el recibo',
+            error instanceof Error
+              ? error.message
+              : 'Error al obtener el recibo',
+          );
+        },
+      });
       return;
     }
     if (variant === 'error') {
@@ -199,7 +211,7 @@ export function TransactionResultScreen({ navigation }: Props) {
       navigation.navigate('Checkout');
       return;
     }
-    void refreshStatus();
+    refreshStatus();
   };
 
   return (
@@ -285,18 +297,28 @@ export function TransactionResultScreen({ navigation }: Props) {
         <View style={styles.actions}>
           <Pressable
             accessibilityRole="button"
-            disabled={variant === 'pending' && refreshing}
+            disabled={
+              (variant === 'pending' && refreshing) ||
+              (variant === 'success' && openingReceipt)
+            }
             onPress={handlePrimary}
             style={({ pressed }) => [
               styles.primaryButton,
               pressed && styles.pressed,
-              variant === 'pending' && refreshing && styles.primaryDisabled,
+              ((variant === 'pending' && refreshing) ||
+                (variant === 'success' && openingReceipt)) &&
+                styles.primaryDisabled,
             ]}
           >
             {variant === 'pending' && refreshing ? (
               <View style={styles.primaryBusy}>
                 <ActivityIndicator color={colors.white} />
                 <Text style={styles.primaryText}>Consultando…</Text>
+              </View>
+            ) : variant === 'success' && openingReceipt ? (
+              <View style={styles.primaryBusy}>
+                <ActivityIndicator color={colors.white} />
+                <Text style={styles.primaryText}>Abriendo recibo…</Text>
               </View>
             ) : (
               <View style={styles.primaryBusy}>
@@ -314,7 +336,7 @@ export function TransactionResultScreen({ navigation }: Props) {
 
           <Pressable
             accessibilityRole="button"
-            disabled={refreshing}
+            disabled={refreshing || openingReceipt}
             onPress={goHome}
             style={({ pressed }) => [
               styles.secondaryButton,
