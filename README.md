@@ -72,6 +72,21 @@ npm test
 npm run test:coverage
 ```
 
+### API (Nest on EC2)
+
+```bash
+cp .env.example .env
+# EXPO_PUBLIC_API_BASE_URL=http://18.224.46.220:3000
+```
+
+- Home → `GET /api/products`
+- Pay → `POST /api/transactions`
+- Docs: http://18.224.46.220:3000/api/docs  
+
+Restart Metro after changing `.env` (`npx expo start -c`).
+
+Visa mock `**** 4242` uses the Wompi sandbox test card. Prefer **Añadir nueva** with a real sandbox card for full flow.
+
 ## Hybrid native builds
 
 You can work either through Expo or by entering the native folders.

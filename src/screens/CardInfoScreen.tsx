@@ -1,10 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing } from '../theme/colors';
 
-/**
- * Card form lives as a BottomSheet on Checkout (M-06).
- * This route is kept for stack completeness / deep links.
- */
+
 export function CardInfoScreen() {
   return (
     <View style={styles.container}>

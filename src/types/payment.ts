@@ -8,3 +8,12 @@ export interface SavedCard {
   expMonth: string;
   expYear: string;
 }
+
+export interface ChargeableCard {
+  number: string;
+  holderName: string;
+  expMonth: string;
+  expYear: string;
+  cvv: string;
+  installments: number;
+}

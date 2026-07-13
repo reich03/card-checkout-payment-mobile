@@ -1,6 +1,5 @@
 import type { SavedCard } from '../types/payment';
 
-/** Mock saved cards until real tokenization / vault is wired. */
 export const MOCK_SAVED_CARDS: SavedCard[] = [
   {
     id: 'card-visa-4242',
