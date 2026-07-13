@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useProductsQuery } from '../api/hooks/useProductsQuery';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { HomeHeader } from '../components/HomeHeader';
 import { HomeSkeleton } from '../components/HomeSkeleton';
@@ -17,7 +18,6 @@ import { PromoBanner } from '../components/PromoBanner';
 import { SearchBar } from '../components/SearchBar';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addToCart, selectCartCount } from '../store/slices/cartSlice';
-import { loadProducts } from '../store/slices/productsSlice';
 import type { RootStackParamList } from '../types/navigation';
 import type { Product } from '../types/product';
 import { colors, spacing } from '../theme/colors';
@@ -30,14 +30,15 @@ export function HomeScreen({ navigation }: Props) {
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
 
-  const { items, status, error } = useAppSelector((state) => state.products);
+  const {
+    data: items = [],
+    isPending,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useProductsQuery();
   const cartCount = useAppSelector(selectCartCount);
-
-  useEffect(() => {
-    if (status === 'idle') {
-      void dispatch(loadProducts());
-    }
-  }, [dispatch, status]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -60,11 +61,13 @@ export function HomeScreen({ navigation }: Props) {
     dispatch(addToCart(product));
   };
 
+  const showSkeleton = isPending && items.length === 0;
+
   return (
     <View style={[styles.screen, { paddingTop: insets.top }]}>
       <HomeHeader count={cartCount} onPressCart={goToCart} />
 
-      {status === 'loading' || status === 'idle' ? (
+      {showSkeleton ? (
         <HomeSkeleton />
       ) : (
         <FlatList
@@ -88,21 +91,28 @@ export function HomeScreen({ navigation }: Props) {
                 <Text style={styles.sectionTitle}>Nuestros Productos</Text>
                 <Text style={styles.tune}>⚙︎</Text>
               </View>
-              {status === 'failed' ? (
+              {isError ? (
                 <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{error}</Text>
+                  <Text style={styles.errorText}>
+                    {error instanceof Error
+                      ? error.message
+                      : 'No se pudieron cargar los productos'}
+                  </Text>
                   <Pressable
-                    onPress={() => void dispatch(loadProducts())}
+                    onPress={() => void refetch()}
                     style={styles.retry}
+                    disabled={isRefetching}
                   >
-                    <Text style={styles.retryText}>Reintentar</Text>
+                    <Text style={styles.retryText}>
+                      {isRefetching ? 'Cargando…' : 'Reintentar'}
+                    </Text>
                   </Pressable>
                 </View>
               ) : null}
             </View>
           }
           ListEmptyComponent={
-            status === 'succeeded' ? (
+            !isError ? (
               <Text style={styles.empty}>No hay productos para “{query}”.</Text>
             ) : null
           }

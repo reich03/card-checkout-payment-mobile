@@ -14,9 +14,9 @@ import {
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCreateTransactionMutation } from '../api/hooks/useCreateTransactionMutation';
 import { ErrorToast } from './ErrorToast';
 import { OrderSummaryItemCard } from './OrderSummaryItemCard';
-import { createTransaction } from '../services/transactionsApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   clearCart,
@@ -46,6 +46,7 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
     const dispatch = useAppDispatch();
     const insets = useSafeAreaInsets();
     const snapPoints = useMemo(() => ['88%'], []);
+    const createPayment = useCreateTransactionMutation();
 
     const items = useAppSelector(selectCartItems);
     const total = useAppSelector(selectCartTotal);
@@ -54,9 +55,10 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
     const installments = useAppSelector(selectInstallments);
     const customerEmail = useAppSelector(selectCustomerEmail);
 
-    const [processing, setProcessing] = useState(false);
     const [toastVisible, setToastVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
+
+    const processing = createPayment.isPending;
 
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -77,7 +79,7 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
       setTimeout(() => setToastVisible(false), 3200);
     };
 
-    const handlePay = async () => {
+    const handlePay = () => {
       if (!selectedCard || processing) {
         return;
       }
@@ -89,11 +91,10 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
         return;
       }
 
-      setProcessing(true);
       dispatch(paymentStarted());
 
-      try {
-        const result = await createTransaction({
+      createPayment.mutate(
+        {
           customerEmail: customerEmail ?? 'cliente@greenpay.mock',
           currency: 'COP',
           products: items.map((item) => ({
@@ -108,24 +109,25 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
             cvv: chargeableCard.cvv,
             installments: chargeableCard.installments || installments || 1,
           },
-        });
-
-        dispatch(paymentSucceeded(result));
-        // Clear cart once payment is accepted by the API (approved or pending).
-        if (result.status === 'APPROVED' || result.status === 'PENDING') {
-          dispatch(clearCart());
-        }
-        setProcessing(false);
-        onPaid();
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : 'No se pudo procesar el pago';
-        dispatch(paymentFailed(message));
-        setProcessing(false);
-        showToast(message);
-      }
+        },
+        {
+          onSuccess: (result) => {
+            dispatch(paymentSucceeded(result));
+            if (result.status === 'APPROVED' || result.status === 'PENDING') {
+              dispatch(clearCart());
+            }
+            onPaid();
+          },
+          onError: (error) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : 'No se pudo procesar el pago';
+            dispatch(paymentFailed(message));
+            showToast(message);
+          },
+        },
+      );
     };
 
     const cardLabel = selectedCard
@@ -394,7 +396,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
   },
   processingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(253, 248, 248, 0.94)',
     alignItems: 'center',
     justifyContent: 'center',
