@@ -7,6 +7,7 @@ import cartReducer, {
   selectCartCount,
   selectCartSubtotal,
   selectCartTotal,
+  syncCartWithCatalog,
 } from '../src/store/slices/cartSlice';
 import type { Product } from '../src/types/product';
 
@@ -55,6 +56,39 @@ test('does not increment above stock', () => {
   let state = cartReducer(undefined, addToCart(limited));
   state = cartReducer(state, incrementQuantity(limited.id));
   expect(state.items[0].quantity).toBe(1);
+});
+
+test('does not add when stock is zero', () => {
+  const soldOut: Product = { ...coffee, stock: 0 };
+  const state = cartReducer(undefined, addToCart(soldOut));
+  expect(state.items).toHaveLength(0);
+});
+
+test('addToCart does not exceed stock when tapping repeatedly', () => {
+  const limited: Product = { ...coffee, stock: 2 };
+  let state = cartReducer(undefined, addToCart(limited));
+  state = cartReducer(state, addToCart(limited));
+  state = cartReducer(state, addToCart(limited));
+  expect(state.items[0].quantity).toBe(2);
+});
+
+test('syncCartWithCatalog clamps quantity and drops out-of-stock lines', () => {
+  let state = cartReducer(undefined, addToCart(coffee));
+  state = cartReducer(state, addToCart(coffee));
+  state = cartReducer(state, addToCart(coffee));
+
+  state = cartReducer(
+    state,
+    syncCartWithCatalog([{ ...coffee, stock: 1 }]),
+  );
+  expect(state.items[0].quantity).toBe(1);
+  expect(state.items[0].product.stock).toBe(1);
+
+  state = cartReducer(
+    state,
+    syncCartWithCatalog([{ ...coffee, stock: 0 }]),
+  );
+  expect(state.items).toHaveLength(0);
 });
 
 test('removes an item and clears the cart', () => {

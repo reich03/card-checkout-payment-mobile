@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -7,6 +7,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useProductsQuery } from '../api/hooks/useProductsQuery';
@@ -17,7 +18,11 @@ import { ProductCard } from '../components/ProductCard';
 import { PromoBanner } from '../components/PromoBanner';
 import { SearchBar } from '../components/SearchBar';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addToCart, selectCartCount } from '../store/slices/cartSlice';
+import {
+  addToCart,
+  selectCartCount,
+  syncCartWithCatalog,
+} from '../store/slices/cartSlice';
 import type { RootStackParamList } from '../types/navigation';
 import type { Product } from '../types/product';
 import { colors, spacing } from '../theme/colors';
@@ -37,8 +42,22 @@ export function HomeScreen({ navigation }: Props) {
     error,
     refetch,
     isRefetching,
+    isSuccess,
   } = useProductsQuery();
   const cartCount = useAppSelector(selectCartCount);
+
+  // F-03: when returning to Home after payment, pull fresh stock.
+  useFocusEffect(
+    useCallback(() => {
+      void refetch();
+    }, [refetch]),
+  );
+
+  useEffect(() => {
+    if (isSuccess && items.length > 0) {
+      dispatch(syncCartWithCatalog(items));
+    }
+  }, [dispatch, isSuccess, items]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -58,6 +77,9 @@ export function HomeScreen({ navigation }: Props) {
   const goToCart = () => navigation.navigate('Cart');
 
   const handleAdd = (product: Product) => {
+    if (product.stock <= 0) {
+      return;
+    }
     dispatch(addToCart(product));
   };
 

@@ -4,15 +4,23 @@ import {
   type CreateTransactionPayload,
   type TransactionResult,
 } from '../../services/transactionsApi';
-import { queryClient, queryKeys } from '../queryClient';
+import { queryKeys, refetchProductsCatalog } from '../queryClient';
+import { queryClient } from '../queryClient';
 
 export function useCreateTransactionMutation() {
   return useMutation({
     mutationFn: (payload: CreateTransactionPayload) =>
       createTransaction(payload),
-    onSuccess: (result: TransactionResult) => {
+    onSuccess: async (result: TransactionResult) => {
       queryClient.setQueryData(queryKeys.transaction(result.id), result);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      // Stock only changes on APPROVED; still refresh so Home shows latest.
+      if (
+        result.status === 'APPROVED' ||
+        result.status === 'PENDING' ||
+        result.status === 'DECLINED'
+      ) {
+        await refetchProductsCatalog();
+      }
     },
   });
 }

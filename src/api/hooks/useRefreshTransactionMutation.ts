@@ -3,15 +3,15 @@ import {
   fetchTransaction,
   type TransactionResult,
 } from '../../services/transactionsApi';
-import { queryClient, queryKeys } from '../queryClient';
+import { queryClient, queryKeys, refetchProductsCatalog } from '../queryClient';
 
 export function useRefreshTransactionMutation() {
   return useMutation({
     mutationFn: (id: string) => fetchTransaction(id),
-    onSuccess: (result: TransactionResult) => {
+    onSuccess: async (result: TransactionResult) => {
       queryClient.setQueryData(queryKeys.transaction(result.id), result);
-      if (result.status === 'APPROVED') {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.products });
+      if (result.status === 'APPROVED' || result.status === 'DECLINED') {
+        await refetchProductsCatalog();
       }
     },
   });

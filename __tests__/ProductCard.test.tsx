@@ -8,13 +8,13 @@ jest.useFakeTimers();
 const product: Product = {
   id: 'prod-1',
   name: 'Café Especial',
-  description: 'Premium',
+  description: 'Tueste medio con notas a cacao',
   price: 45000,
   stock: 10,
   imageUrl: 'https://example.com/coffee.jpg',
 };
 
-test('renders product name, price and add button', async () => {
+test('renders name, description, stock and add button', async () => {
   const onAdd = jest.fn();
   let tree: ReactTestRenderer.ReactTestRenderer;
 
@@ -28,7 +28,14 @@ test('renders product name, price and add button', async () => {
     .root.findAll((node) => typeof node.props.children === 'string')
     .map((node) => node.props.children as string);
 
-  expect(labels).toEqual(expect.arrayContaining(['Café Especial', 'Agregar']));
+  expect(labels).toEqual(
+    expect.arrayContaining([
+      'Café Especial',
+      'Tueste medio con notas a cacao',
+      '10 disponibles',
+      'Agregar',
+    ]),
+  );
   expect(labels.some((label) => label.includes('45'))).toBe(true);
 
   await ReactTestRenderer.act(() => {
@@ -58,6 +65,34 @@ test('calls onAdd when pressing Agregar', async () => {
 
   await ReactTestRenderer.act(() => {
     jest.runOnlyPendingTimers();
+    tree!.unmount();
+  });
+});
+
+test('blocks add when stock is zero', async () => {
+  const onAdd = jest.fn();
+  const soldOut: Product = { ...product, stock: 0 };
+  let tree: ReactTestRenderer.ReactTestRenderer;
+
+  await ReactTestRenderer.act(() => {
+    tree = ReactTestRenderer.create(
+      <ProductCard product={soldOut} onAdd={onAdd} />,
+    );
+  });
+
+  const addButton = tree!.root.findByProps({
+    accessibilityLabel: 'Café Especial agotado',
+  });
+
+  expect(addButton.props.disabled).toBe(true);
+
+  await ReactTestRenderer.act(() => {
+    addButton.props.onPress?.();
+  });
+
+  expect(onAdd).not.toHaveBeenCalled();
+
+  await ReactTestRenderer.act(() => {
     tree!.unmount();
   });
 });
