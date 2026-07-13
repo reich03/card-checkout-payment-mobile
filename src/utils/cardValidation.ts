@@ -28,7 +28,6 @@ export function detectCardBrand(cardNumber: string): CardBrand | null {
   return null;
 }
 
-/** Luhn algorithm — returns true when the number is valid. */
 export function luhnCheck(cardNumber: string): boolean {
   const digits = onlyDigits(cardNumber);
   if (digits.length < 13 || digits.length > 19) {

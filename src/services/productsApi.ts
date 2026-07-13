@@ -1,52 +1,72 @@
+import { apiUrl } from '../config/env';
 import type { Product } from '../types/product';
 
-/** Mock catalog used until the backend is deployed on AWS. */
-export const MOCK_PRODUCTS: Product[] = [
-  {
-    id: 'prod-cafe-especial',
-    name: 'Café Especial',
-    description: 'Granos premium de origen colombiano',
-    price: 45000,
-    stock: 40,
-    imageUrl:
-      'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=800&q=80',
-  },
-  {
-    id: 'prod-taza-artesanal',
-    name: 'Taza Artesanal',
-    description: 'Cerámica hecha a mano',
-    price: 32500,
-    stock: 25,
-    imageUrl:
-      'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=800&q=80',
-  },
-  {
-    id: 'prod-prensa-francesa',
-    name: 'Prensa Francesa',
-    description: 'Acero inoxidable con acentos green',
-    price: 89900,
-    stock: 15,
-    imageUrl:
-      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&q=80',
-  },
-  {
-    id: 'prod-filtros-organicos',
-    name: 'Filtros Orgánicos',
-    description: 'Algodón orgánico reutilizable',
-    price: 18000,
-    stock: 60,
-    imageUrl:
-      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80',
-  },
-];
+type ApiProduct = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  imageUrl: string;
+};
 
-const MOCK_LATENCY_MS = 1400;
+function toProduct(item: ApiProduct): Product {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: Number(item.price),
+    stock: Number(item.stock),
+    imageUrl: item.imageUrl,
+  };
+}
 
-/**
- * Simulates GET /api/products until the Nest API is live.
- * Swap the body for a real fetch when AWS is ready.
- */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = 15000,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** GET /api/products */
 export async function fetchProducts(): Promise<Product[]> {
-  await new Promise((resolve) => setTimeout(resolve, MOCK_LATENCY_MS));
-  return MOCK_PRODUCTS.map((product) => ({ ...product }));
+  const url = apiUrl('/api/products');
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.name === 'AbortError'
+        ? 'Tiempo de espera agotado al cargar productos'
+        : error instanceof Error
+          ? error.message
+          : 'No se pudo conectar con la API';
+    throw new Error(message);
+  }
+
+  if (!response.ok) {
+    throw new Error(`No se pudieron cargar los productos (${response.status})`);
+  }
+
+  const data = (await response.json()) as unknown;
+  if (!Array.isArray(data)) {
+    throw new Error('Respuesta de productos inválida');
+  }
+
+  return (data as ApiProduct[]).map(toProduct);
 }

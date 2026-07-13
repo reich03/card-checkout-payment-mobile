@@ -42,7 +42,6 @@ function cartSnapshot(state: RootState): PersistedCart {
   return { items: state.cart.items };
 }
 
-/** Debounced encrypted persistence for cart + payment method data. */
 export function subscribeSecurePersistence(
   getState: () => RootState,
 ): () => void {

@@ -68,7 +68,6 @@ export function CheckoutScreen({ navigation }: Props) {
 
   const handleAddNew = () => {
     closeSelectionSheet();
-    // Let selection dismiss, then open the card form sheet.
     setTimeout(() => {
       openFormSheet();
     }, 280);

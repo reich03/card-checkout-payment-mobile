@@ -15,9 +15,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ErrorToast } from './ErrorToast';
 import { OrderSummaryItemCard } from './OrderSummaryItemCard';
-import { mockCreateTransaction } from '../services/mockPaymentApi';
+import { createTransaction } from '../services/transactionsApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
+  clearCart,
   selectCartItems,
   selectCartTotal,
 } from '../store/slices/cartSlice';
@@ -26,6 +27,7 @@ import {
   paymentResetStatus,
   paymentStarted,
   paymentSucceeded,
+  selectChargeableCard,
   selectCustomerEmail,
   selectInstallments,
   selectSelectedCard,
@@ -47,6 +49,7 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
     const items = useAppSelector(selectCartItems);
     const total = useAppSelector(selectCartTotal);
     const selectedCard = useAppSelector(selectSelectedCard);
+    const chargeableCard = useAppSelector(selectChargeableCard);
     const installments = useAppSelector(selectInstallments);
     const customerEmail = useAppSelector(selectCustomerEmail);
 
@@ -78,27 +81,39 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
         return;
       }
 
+      if (!chargeableCard) {
+        showToast(
+          'Añade una tarjeta nueva (o elige Visa **** 4242) para pagar.',
+        );
+        return;
+      }
+
       setProcessing(true);
       dispatch(paymentStarted());
 
       try {
-        const result = await mockCreateTransaction({
-          amount: total,
-          currency: 'COP',
+        const result = await createTransaction({
           customerEmail: customerEmail ?? 'cliente@greenpay.mock',
-          cardLast4: selectedCard.last4,
-          installments,
+          currency: 'COP',
           products: items.map((item) => ({
             productId: item.product.id,
             quantity: item.quantity,
-            unitPrice: item.product.price,
           })),
-        }, {
-            outcome: 'DECLINED',
+          card: {
+            number: chargeableCard.number,
+            holderName: chargeableCard.holderName,
+            expMonth: chargeableCard.expMonth,
+            expYear: chargeableCard.expYear,
+            cvv: chargeableCard.cvv,
+            installments: chargeableCard.installments || installments || 1,
           },
-        );
+        });
 
         dispatch(paymentSucceeded(result));
+        // Clear cart once payment is accepted by the API (approved or pending).
+        if (result.status === 'APPROVED' || result.status === 'PENDING') {
+          dispatch(clearCart());
+        }
         setProcessing(false);
         onPaid();
       } catch (error) {

@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { MOCK_SAVED_CARDS } from '../../services/mockCards';
-import type { MockTransactionResult } from '../../services/mockPaymentApi';
+import type { TransactionResult } from '../../services/transactionsApi';
 import type { PersistedPayment } from '../../services/secureStorage';
-import type { SavedCard } from '../../types/payment';
+import type { ChargeableCard, SavedCard } from '../../types/payment';
 
 export type PaymentFlowStatus =
   | 'idle'
@@ -15,17 +15,28 @@ export interface PaymentState {
   savedCards: SavedCard[];
   draftSelectedCardId: string | null;
   selectedCard: SavedCard | null;
+  chargeableCard: ChargeableCard | null;
   customerEmail: string | null;
   installments: number;
-  lastTransaction: MockTransactionResult | null;
+  lastTransaction: TransactionResult | null;
   status: PaymentFlowStatus;
   error: string | null;
 }
+
+const SANDBOX_VISA_CHARGEABLE: ChargeableCard = {
+  number: '4242424242424242',
+  holderName: 'APPROVED',
+  expMonth: '12',
+  expYear: '30',
+  cvv: '123',
+  installments: 1,
+};
 
 const initialState: PaymentState = {
   savedCards: MOCK_SAVED_CARDS,
   draftSelectedCardId: MOCK_SAVED_CARDS[0]?.id ?? null,
   selectedCard: null,
+  chargeableCard: null,
   customerEmail: null,
   installments: 1,
   lastTransaction: null,
@@ -45,6 +56,25 @@ const paymentSlice = createSlice({
         (entry) => entry.id === state.draftSelectedCardId,
       );
       state.selectedCard = card ?? null;
+
+      if (!card) {
+        state.chargeableCard = null;
+        return;
+      }
+
+      if (state.chargeableCard?.number.slice(-4) === card.last4) {
+        return;
+      }
+
+      if (card.last4 === '4242') {
+        state.chargeableCard = {
+          ...SANDBOX_VISA_CHARGEABLE,
+          installments: state.installments || 1,
+        };
+        return;
+      }
+
+      state.chargeableCard = null;
     },
     addSavedCard(
       state,
@@ -52,6 +82,7 @@ const paymentSlice = createSlice({
         card: SavedCard;
         email: string;
         installments: number;
+        chargeable: ChargeableCard;
       }>,
     ) {
       state.savedCards.unshift(action.payload.card);
@@ -59,15 +90,17 @@ const paymentSlice = createSlice({
       state.selectedCard = action.payload.card;
       state.customerEmail = action.payload.email;
       state.installments = action.payload.installments;
+      state.chargeableCard = action.payload.chargeable;
     },
     clearPaymentMethod(state) {
       state.selectedCard = null;
+      state.chargeableCard = null;
     },
     paymentStarted(state) {
       state.status = 'processing';
       state.error = null;
     },
-    paymentSucceeded(state, action: PayloadAction<MockTransactionResult>) {
+    paymentSucceeded(state, action: PayloadAction<TransactionResult>) {
       state.lastTransaction = action.payload;
       if (action.payload.status === 'APPROVED') {
         state.status = 'succeeded';
@@ -106,6 +139,8 @@ const paymentSlice = createSlice({
       state.selectedCard = payload.selectedCard ?? null;
       state.customerEmail = payload.customerEmail ?? null;
       state.installments = payload.installments ?? 1;
+      // Never hydrate PAN/CVV from disk.
+      state.chargeableCard = null;
     },
   },
 });
@@ -137,6 +172,9 @@ export const selectCustomerEmail = (state: { payment: PaymentState }) =>
 
 export const selectInstallments = (state: { payment: PaymentState }) =>
   state.payment.installments;
+
+export const selectChargeableCard = (state: { payment: PaymentState }) =>
+  state.payment.chargeableCard;
 
 export const selectLastTransaction = (state: { payment: PaymentState }) =>
   state.payment.lastTransaction;

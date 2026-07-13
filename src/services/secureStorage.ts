@@ -33,7 +33,7 @@ async function writeJson(key: string, value: unknown): Promise<void> {
   try {
     await EncryptedStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Native module may be unavailable in Expo Go / web — ignore.
+    //
   }
 }
 

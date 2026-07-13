@@ -10,10 +10,6 @@
       "expo-font",
       "expo-asset"
     ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.paycheckoutapp"
-    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#fdf8f8",
@@ -22,7 +18,24 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.paycheckoutapp",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "usesCleartextTraffic": true
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.paycheckoutapp",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true,
+          "NSExceptionDomains": {
+            "18.224.46.220": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

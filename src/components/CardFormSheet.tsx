@@ -115,6 +115,14 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
           card,
           email: values.email.trim(),
           installments: values.installments,
+          chargeable: {
+            number: digits,
+            holderName: values.holderName.trim(),
+            expMonth,
+            expYear,
+            cvv: values.cvv,
+            installments: values.installments,
+          },
         }),
       );
       onCompleted();
