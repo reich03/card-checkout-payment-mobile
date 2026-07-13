@@ -1,4 +1,5 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { CartItem } from '../store/slices/cartSlice';
 import { formatCop } from '../utils/formatCurrency';
 import { colors, radii, spacing } from '../theme/colors';
@@ -33,7 +34,11 @@ export function CartItemCard({
             onPress={() => onRemove(item.product.id)}
             style={styles.deleteButton}
           >
-            <Text style={styles.deleteIcon}>🗑</Text>
+            <Ionicons
+              name="trash-outline"
+              size={18}
+              color={colors.onSurfaceVariant}
+            />
           </Pressable>
         </View>
 
@@ -106,9 +111,6 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 4,
     borderRadius: radii.full,
-  },
-  deleteIcon: {
-    fontSize: 16,
   },
   unitPrice: {
     marginTop: 4,

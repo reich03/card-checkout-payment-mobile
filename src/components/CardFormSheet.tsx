@@ -6,6 +6,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -150,7 +151,7 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
             onPress={onRequestClose}
             style={styles.closeButton}
           >
-            <Text style={styles.closeIcon}>✕</Text>
+            <Ionicons name="close" size={22} color={colors.onSurface} />
           </Pressable>
         </View>
 
@@ -314,9 +315,11 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
               {installmentsValue === 1 ? 'cuota' : 'cuotas'} (
               {formatCop(Math.ceil(total / installmentsValue))})
             </Text>
-            <Text style={styles.selectChevron}>
-              {installmentsOpen ? '▴' : '▾'}
-            </Text>
+            <Ionicons
+              name={installmentsOpen ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={colors.onSurfaceVariant}
+            />
           </Pressable>
           {installmentsOpen ? (
             <View style={styles.options}>
@@ -443,10 +446,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closeIcon: {
-    fontSize: 18,
-    color: colors.onSurfaceVariant,
-  },
   form: {
     paddingHorizontal: spacing.marginMobile,
     gap: spacing.sm,
@@ -513,10 +512,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 16,
     color: colors.onSurface,
-  },
-  selectChevron: {
-    color: colors.onSurfaceVariant,
-    fontSize: 14,
   },
   options: {
     borderRadius: radii.lg,

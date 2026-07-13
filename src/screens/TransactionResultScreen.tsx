@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ComponentProps } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -8,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -26,6 +28,7 @@ import { colors, radii, spacing } from '../theme/colors';
 type Props = NativeStackScreenProps<RootStackParamList, 'TransactionResult'>;
 
 type ResultVariant = 'success' | 'error' | 'pending';
+type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
 function formatResultDate(iso?: string): string {
   const date = iso ? new Date(iso) : new Date();
@@ -81,15 +84,30 @@ export function TransactionResultScreen({ navigation }: Props) {
   const reference = transaction?.id ?? '—';
   const dateLabel = formatResultDate(transaction?.createdAt);
 
-  const copy = {
+  const copy: Record<
+    ResultVariant,
+    {
+      title: string;
+      subtitle: string;
+      titleColor: string;
+      iconBg: string;
+      icon: IoniconName;
+      iconColor: string;
+      primaryLabel: string;
+      primaryIcon?: IoniconName;
+      secondaryLabel: string;
+      footer: string;
+    }
+  > = {
     success: {
       title: '¡Pago exitoso!',
       subtitle: 'Tu transacción ha sido procesada con éxito.',
       titleColor: colors.brand,
       iconBg: 'rgba(97, 249, 187, 0.2)',
-      icon: '✓',
+      icon: 'checkmark',
       iconColor: colors.brandBright,
       primaryLabel: 'Descargar Recibo',
+      primaryIcon: 'download-outline',
       secondaryLabel: 'Volver a la tienda',
       footer: 'Recibirás un correo electrónico con los detalles del pago.',
     },
@@ -101,7 +119,7 @@ export function TransactionResultScreen({ navigation }: Props) {
         'No pudimos procesar tu pago. Por favor, intenta de nuevo.',
       titleColor: colors.error,
       iconBg: 'rgba(186, 26, 26, 0.12)',
-      icon: '✕',
+      icon: 'close',
       iconColor: colors.error,
       primaryLabel: 'Reintentar pago',
       secondaryLabel: 'Volver a la tienda',
@@ -114,13 +132,15 @@ export function TransactionResultScreen({ navigation }: Props) {
         'Estamos confirmando tu pago. Esto puede tomar unos minutos.',
       titleColor: '#c47a00',
       iconBg: 'rgba(196, 122, 0, 0.12)',
-      icon: '⏱',
+      icon: 'time-outline',
       iconColor: '#c47a00',
       primaryLabel: 'Consultar estado',
+      primaryIcon: 'refresh-outline',
       secondaryLabel: 'Volver a la tienda',
       footer: 'Consulta de nuevo para ver si Wompi ya confirmó el pago.',
     },
-  }[variant];
+  };
+  const current = copy[variant];
 
   const goHome = () => {
     if (variant === 'success' || variant === 'pending') {
@@ -201,36 +221,30 @@ export function TransactionResultScreen({ navigation }: Props) {
           },
         ]}
       >
-        <View style={[styles.iconRing, { backgroundColor: copy.iconBg }]}>
+        <View style={[styles.iconRing, { backgroundColor: current.iconBg }]}>
           <View
             style={[
               styles.iconCircle,
               {
-                borderColor: copy.iconColor,
+                borderColor: current.iconColor,
                 backgroundColor:
                   variant === 'success' ? colors.brandBright : 'transparent',
               },
             ]}
           >
-            <Text
-              style={[
-                styles.iconGlyph,
-                {
-                  color:
-                    variant === 'success' ? colors.white : copy.iconColor,
-                },
-              ]}
-            >
-              {copy.icon}
-            </Text>
+            <Ionicons
+              name={current.icon}
+              size={40}
+              color={variant === 'success' ? colors.white : current.iconColor}
+            />
           </View>
         </View>
 
         <View style={styles.heading}>
-          <Text style={[styles.title, { color: copy.titleColor }]}>
-            {copy.title}
+          <Text style={[styles.title, { color: current.titleColor }]}>
+            {current.title}
           </Text>
-          <Text style={styles.subtitle}>{copy.subtitle}</Text>
+          <Text style={styles.subtitle}>{current.subtitle}</Text>
         </View>
 
         <View style={styles.card}>
@@ -256,7 +270,11 @@ export function TransactionResultScreen({ navigation }: Props) {
 
           {variant === 'success' ? (
             <View style={styles.secureBadge}>
-              <Text style={styles.secureIcon}>🛡</Text>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={16}
+                color={colors.onSecondaryContainer}
+              />
               <Text style={styles.secureText}>
                 Transacción segura por GreenPay
               </Text>
@@ -281,10 +299,16 @@ export function TransactionResultScreen({ navigation }: Props) {
                 <Text style={styles.primaryText}>Consultando…</Text>
               </View>
             ) : (
-              <Text style={styles.primaryText}>
-                {variant === 'success' ? '⬇  ' : ''}
-                {copy.primaryLabel}
-              </Text>
+              <View style={styles.primaryBusy}>
+                {current.primaryIcon ? (
+                  <Ionicons
+                    name={current.primaryIcon}
+                    size={18}
+                    color={colors.white}
+                  />
+                ) : null}
+                <Text style={styles.primaryText}>{current.primaryLabel}</Text>
+              </View>
             )}
           </Pressable>
 
@@ -297,11 +321,11 @@ export function TransactionResultScreen({ navigation }: Props) {
               pressed && styles.pressed,
             ]}
           >
-            <Text style={styles.secondaryText}>{copy.secondaryLabel}</Text>
+            <Text style={styles.secondaryText}>{current.secondaryLabel}</Text>
           </Pressable>
         </View>
 
-        <Text style={styles.footer}>{copy.footer}</Text>
+        <Text style={styles.footer}>{current.footer}</Text>
       </Animated.View>
 
       <View style={styles.bottomAccent} />
@@ -334,11 +358,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconGlyph: {
-    fontSize: 40,
-    fontWeight: '700',
-    fontFamily: 'Inter_700Bold',
   },
   heading: {
     alignItems: 'center',
@@ -422,9 +441,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceContainerLow,
     borderRadius: radii.md,
     padding: spacing.sm,
-  },
-  secureIcon: {
-    fontSize: 16,
   },
   secureText: {
     fontFamily: 'Inter_500Medium',

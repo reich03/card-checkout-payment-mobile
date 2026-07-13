@@ -1,4 +1,5 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomNavBar } from '../components/BottomNavBar';
@@ -39,11 +40,11 @@ export function CartScreen({ navigation }: Props) {
           onPress={goHome}
           style={styles.headerButton}
         >
-          <Text style={styles.headerIcon}>←</Text>
+          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
         </Pressable>
         <Text style={styles.headerTitle}>Carrito</Text>
         <View style={styles.headerButton}>
-          <Text style={styles.headerIcon}>🛒</Text>
+          <Ionicons name="cart-outline" size={22} color={colors.onSurface} />
           {cartCount > 0 ? (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
@@ -120,7 +121,7 @@ export function CartScreen({ navigation }: Props) {
               pressed && styles.checkoutPressed,
             ]}
           >
-            <Text style={styles.checkoutIcon}>💳</Text>
+            <Ionicons name="card-outline" size={20} color={colors.white} />
             <Text style={styles.checkoutText}>Continuar al pago</Text>
           </Pressable>
         </View>
@@ -150,10 +151,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.full,
-  },
-  headerIcon: {
-    fontSize: 20,
-    color: colors.onSurface,
   },
   headerTitle: {
     fontFamily: 'Inter_600SemiBold',
@@ -286,9 +283,6 @@ const styles = StyleSheet.create({
   },
   checkoutPressed: {
     transform: [{ scale: 0.97 }],
-  },
-  checkoutIcon: {
-    fontSize: 18,
   },
   checkoutText: {
     color: colors.white,

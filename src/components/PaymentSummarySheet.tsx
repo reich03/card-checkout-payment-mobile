@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -174,11 +175,25 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
 
           <View style={styles.metaGrid}>
             <View style={styles.metaCard}>
-              <Text style={styles.metaLabel}>💳  Método</Text>
+              <View style={styles.metaLabelRow}>
+                <Ionicons
+                  name="card-outline"
+                  size={14}
+                  color={colors.onSurfaceVariant}
+                />
+                <Text style={styles.metaLabel}>Método</Text>
+              </View>
               <Text style={styles.metaValue}>{cardLabel}</Text>
             </View>
             <View style={styles.metaCard}>
-              <Text style={styles.metaLabel}>📅  Cuotas</Text>
+              <View style={styles.metaLabelRow}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={colors.onSurfaceVariant}
+                />
+                <Text style={styles.metaLabel}>Cuotas</Text>
+              </View>
               <Text style={styles.metaValue}>
                 {installments} {installments === 1 ? 'cuota' : 'cuotas'}
               </Text>
@@ -323,11 +338,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
+  metaLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
   metaLabel: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
     color: colors.onSurfaceVariant,
-    marginBottom: 4,
   },
   metaValue: {
     fontFamily: 'Inter_700Bold',
