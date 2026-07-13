@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
+import { queryClient } from './src/api/queryClient';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { store } from './src/store';
 import {
@@ -44,14 +46,16 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <Provider store={store}>
-        <SafeAreaProvider>
-          <BottomSheetModalProvider>
-            <StatusBar style="dark" />
-            <RootNavigator />
-          </BottomSheetModalProvider>
-        </SafeAreaProvider>
-      </Provider>
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <SafeAreaProvider>
+            <BottomSheetModalProvider>
+              <StatusBar style="dark" />
+              <RootNavigator />
+            </BottomSheetModalProvider>
+          </SafeAreaProvider>
+        </Provider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }

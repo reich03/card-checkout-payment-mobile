@@ -58,10 +58,25 @@ export function CartItemCard({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Aumentar cantidad"
+              accessibilityState={{
+                disabled: item.quantity >= item.product.stock,
+              }}
+              disabled={item.quantity >= item.product.stock}
               onPress={() => onIncrement(item.product.id)}
-              style={styles.qtyPlus}
+              style={[
+                styles.qtyPlus,
+                item.quantity >= item.product.stock && styles.qtyPlusDisabled,
+              ]}
             >
-              <Text style={styles.qtyPlusSymbol}>+</Text>
+              <Text
+                style={[
+                  styles.qtyPlusSymbol,
+                  item.quantity >= item.product.stock &&
+                    styles.qtyPlusSymbolDisabled,
+                ]}
+              >
+                +
+              </Text>
             </Pressable>
           </View>
           <Text style={styles.lineTotal}>{formatCop(lineTotal)}</Text>
@@ -149,6 +164,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  qtyPlusDisabled: {
+    backgroundColor: colors.outlineVariant,
+  },
   qtySymbol: {
     fontSize: 18,
     color: colors.onSurface,
@@ -158,6 +176,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.white,
     fontWeight: '700',
+  },
+  qtyPlusSymbolDisabled: {
+    color: colors.onSurfaceVariant,
   },
   qtyValue: {
     width: 40,

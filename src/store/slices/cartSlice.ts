@@ -14,21 +14,37 @@ const initialState: CartState = {
   items: [],
 };
 
+function clampQuantity(quantity: number, stock: number): number {
+  if (stock <= 0) {
+    return 0;
+  }
+  return Math.min(quantity, stock);
+}
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
     addToCart(state, action: PayloadAction<Product>) {
-      const existing = state.items.find(
-        (item) => item.product.id === action.payload.id,
-      );
-
-      if (existing) {
-        existing.quantity += 1;
+      const product = action.payload;
+      if (product.stock <= 0) {
         return;
       }
 
-      state.items.push({ product: action.payload, quantity: 1 });
+      const existing = state.items.find(
+        (item) => item.product.id === product.id,
+      );
+
+      if (existing) {
+        if (existing.quantity < existing.product.stock) {
+          existing.quantity += 1;
+          // Keep product snapshot fresh (price/stock) when adding again.
+          existing.product = product;
+        }
+        return;
+      }
+
+      state.items.push({ product, quantity: 1 });
     },
     incrementQuantity(state, action: PayloadAction<string>) {
       const item = state.items.find(
@@ -67,8 +83,32 @@ const cartSlice = createSlice({
     clearCart(state) {
       state.items = [];
     },
+    /** Refresh product snapshots from catalog and clamp qty to live stock. */
+    syncCartWithCatalog(state, action: PayloadAction<Product[]>) {
+      const byId = new Map(action.payload.map((product) => [product.id, product]));
+
+      state.items = state.items
+        .map((item) => {
+          const fresh = byId.get(item.product.id);
+          if (!fresh) {
+            return item;
+          }
+
+          const quantity = clampQuantity(item.quantity, fresh.stock);
+          return {
+            product: fresh,
+            quantity,
+          };
+        })
+        .filter((item) => item.quantity > 0);
+    },
     hydrateCart(state, action: PayloadAction<{ items: CartItem[] }>) {
-      state.items = action.payload.items ?? [];
+      state.items = (action.payload.items ?? [])
+        .map((item) => ({
+          ...item,
+          quantity: clampQuantity(item.quantity, item.product.stock),
+        }))
+        .filter((item) => item.quantity > 0);
     },
   },
 });
@@ -79,6 +119,7 @@ export const {
   decrementQuantity,
   removeFromCart,
   clearCart,
+  syncCartWithCatalog,
   hydrateCart,
 } = cartSlice.actions;
 

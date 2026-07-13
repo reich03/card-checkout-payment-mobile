@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { ComponentProps } from 'react';
 import {
   ActivityIndicator,
@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRefreshTransactionMutation } from '../api/hooks/useRefreshTransactionMutation';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearCart } from '../store/slices/cartSlice';
 import {
@@ -20,7 +21,6 @@ import {
   selectLastTransaction,
   selectPaymentError,
 } from '../store/slices/paymentSlice';
-import { fetchTransaction } from '../services/transactionsApi';
 import type { RootStackParamList } from '../types/navigation';
 import { formatCop } from '../utils/formatCurrency';
 import { colors, radii, spacing } from '../theme/colors';
@@ -44,7 +44,8 @@ export function TransactionResultScreen({ navigation }: Props) {
   const dispatch = useAppDispatch();
   const transaction = useAppSelector(selectLastTransaction);
   const paymentError = useAppSelector(selectPaymentError);
-  const [refreshing, setRefreshing] = useState(false);
+  const refreshTransaction = useRefreshTransactionMutation();
+  const refreshing = refreshTransaction.isPending;
 
   const scale = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -153,37 +154,36 @@ export function TransactionResultScreen({ navigation }: Props) {
     });
   };
 
-  const refreshStatus = async () => {
+  const refreshStatus = () => {
     if (!transaction?.id || refreshing) {
       return;
     }
 
-    setRefreshing(true);
-    try {
-      const latest = await fetchTransaction(transaction.id);
-      dispatch(
-        paymentSucceeded({
-          ...latest,
-          message: latest.message ?? transaction.message,
-        }),
-      );
-
-      if (latest.status === 'PENDING') {
-        Alert.alert(
-          'Aún en proceso',
-          'Wompi todavía no confirmó el pago. Intenta de nuevo en unos segundos.',
+    refreshTransaction.mutate(transaction.id, {
+      onSuccess: (latest) => {
+        dispatch(
+          paymentSucceeded({
+            ...latest,
+            message: latest.message ?? transaction.message,
+          }),
         );
-      }
-    } catch (error) {
-      Alert.alert(
-        'No se pudo consultar',
-        error instanceof Error
-          ? error.message
-          : 'Error al consultar la transacción',
-      );
-    } finally {
-      setRefreshing(false);
-    }
+
+        if (latest.status === 'PENDING') {
+          Alert.alert(
+            'Aún en proceso',
+            'Wompi todavía no confirmó el pago. Intenta de nuevo en unos segundos.',
+          );
+        }
+      },
+      onError: (error) => {
+        Alert.alert(
+          'No se pudo consultar',
+          error instanceof Error
+            ? error.message
+            : 'Error al consultar la transacción',
+        );
+      },
+    });
   };
 
   const handlePrimary = () => {

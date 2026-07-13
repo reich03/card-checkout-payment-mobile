@@ -33,7 +33,7 @@ src/
 ├── screens/          # 7 screen components
 ├── components/       # Reusable UI components (CardForm, ProductCard, etc.)
 ├── store/            # Redux store configuration
-│   └── slices/       # productsSlice, cartSlice, paymentSlice
+│   └── slices/       # cartSlice, paymentSlice (API data via React Query)
 ├── services/         # API client, payment service
 ├── utils/            # Card validation, encryption, formatters
 ├── navigation/       # Stack navigator config
