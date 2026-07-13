@@ -50,22 +50,84 @@ function extractErrorMessage(body: unknown, status: number): string {
   return `Error al procesar el pago (${status})`;
 }
 
+/** POST /api/transactions */
 export async function createTransaction(
   payload: CreateTransactionPayload,
 ): Promise<TransactionResult> {
-  const response = await fetch(apiUrl('/api/transactions'), {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      products: payload.products,
-      card: payload.card,
-      customerEmail: payload.customerEmail,
-      currency: payload.currency ?? 'COP',
-    }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+
+  let response: Response;
+  try {
+    response = await fetch(apiUrl('/api/transactions'), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        products: payload.products,
+        card: payload.card,
+        customerEmail: payload.customerEmail,
+        currency: payload.currency ?? 'COP',
+      }),
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.name === 'AbortError'
+        ? 'Tiempo de espera agotado al procesar el pago'
+        : error instanceof Error
+          ? error.message
+          : 'No se pudo conectar con la API';
+    throw new Error(message);
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const body = (await response.json().catch(() => null)) as unknown;
+
+  if (!response.ok) {
+    throw new Error(extractErrorMessage(body, response.status));
+  }
+
+  const result = body as TransactionResult;
+  if (!result?.id || !result?.status) {
+    throw new Error('Respuesta de transacción inválida');
+  }
+
+  return {
+    ...result,
+    paymentRef: result.paymentRef ?? result.id,
+    createdAt: result.createdAt ?? new Date().toISOString(),
+  };
+}
+
+/** GET /api/transactions/:id */
+export async function fetchTransaction(
+  id: string,
+): Promise<TransactionResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+
+  let response: Response;
+  try {
+    response = await fetch(apiUrl(`/api/transactions/${encodeURIComponent(id)}`), {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.name === 'AbortError'
+        ? 'Tiempo de espera agotado al consultar la transacción'
+        : error instanceof Error
+          ? error.message
+          : 'No se pudo conectar con la API';
+    throw new Error(message);
+  } finally {
+    clearTimeout(timer);
+  }
 
   const body = (await response.json().catch(() => null)) as unknown;
 

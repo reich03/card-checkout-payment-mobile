@@ -18,6 +18,7 @@ import { OrderSummaryItemCard } from './OrderSummaryItemCard';
 import { createTransaction } from '../services/transactionsApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
+  clearCart,
   selectCartItems,
   selectCartTotal,
 } from '../store/slices/cartSlice';
@@ -109,6 +110,10 @@ export const PaymentSummarySheet = forwardRef<BottomSheetModal, Props>(
         });
 
         dispatch(paymentSucceeded(result));
+        // Clear cart once payment is accepted by the API (approved or pending).
+        if (result.status === 'APPROVED' || result.status === 'PENDING') {
+          dispatch(clearCart());
+        }
         setProcessing(false);
         onPaid();
       } catch (error) {

@@ -16,7 +16,17 @@ const initialState: ProductsState = {
 
 export const loadProducts = createAsyncThunk(
   'products/loadProducts',
-  async () => fetchProducts(),
+  async (_, { rejectWithValue }) => {
+    try {
+      return await fetchProducts();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudieron cargar los productos';
+      return rejectWithValue(message);
+    }
+  },
 );
 
 const productsSlice = createSlice({
@@ -35,7 +45,10 @@ const productsSlice = createSlice({
       })
       .addCase(loadProducts.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message ?? 'No se pudieron cargar los productos';
+        state.error =
+          (typeof action.payload === 'string' ? action.payload : null) ??
+          action.error.message ??
+          'No se pudieron cargar los productos';
       });
   },
 });

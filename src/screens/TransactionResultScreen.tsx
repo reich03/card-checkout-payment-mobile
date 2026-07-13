@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Pressable,
@@ -13,9 +14,11 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { clearCart } from '../store/slices/cartSlice';
 import {
   clearLastTransaction,
+  paymentSucceeded,
   selectLastTransaction,
   selectPaymentError,
 } from '../store/slices/paymentSlice';
+import { fetchTransaction } from '../services/transactionsApi';
 import type { RootStackParamList } from '../types/navigation';
 import { formatCop } from '../utils/formatCurrency';
 import { colors, radii, spacing } from '../theme/colors';
@@ -38,6 +41,7 @@ export function TransactionResultScreen({ navigation }: Props) {
   const dispatch = useAppDispatch();
   const transaction = useAppSelector(selectLastTransaction);
   const paymentError = useAppSelector(selectPaymentError);
+  const [refreshing, setRefreshing] = useState(false);
 
   const scale = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -56,6 +60,8 @@ export function TransactionResultScreen({ navigation }: Props) {
   }, [paymentError, transaction]);
 
   useEffect(() => {
+    scale.setValue(0);
+    opacity.setValue(0);
     Animated.parallel([
       Animated.spring(scale, {
         toValue: 1,
@@ -69,10 +75,10 @@ export function TransactionResultScreen({ navigation }: Props) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [opacity, scale]);
+  }, [opacity, scale, variant]);
 
   const amount = transaction?.amount ?? 0;
-  const reference = transaction?.paymentRef ?? '—';
+  const reference = transaction?.id ?? '—';
   const dateLabel = formatResultDate(transaction?.createdAt);
 
   const copy = {
@@ -110,14 +116,14 @@ export function TransactionResultScreen({ navigation }: Props) {
       iconBg: 'rgba(196, 122, 0, 0.12)',
       icon: '⏱',
       iconColor: '#c47a00',
-      primaryLabel: 'Entendido',
+      primaryLabel: 'Consultar estado',
       secondaryLabel: 'Volver a la tienda',
-      footer: 'Te avisaremos cuando el estado se actualice.',
+      footer: 'Consulta de nuevo para ver si Wompi ya confirmó el pago.',
     },
   }[variant];
 
   const goHome = () => {
-    if (variant === 'success') {
+    if (variant === 'success' || variant === 'pending') {
       dispatch(clearCart());
     }
     dispatch(clearLastTransaction());
@@ -127,11 +133,44 @@ export function TransactionResultScreen({ navigation }: Props) {
     });
   };
 
+  const refreshStatus = async () => {
+    if (!transaction?.id || refreshing) {
+      return;
+    }
+
+    setRefreshing(true);
+    try {
+      const latest = await fetchTransaction(transaction.id);
+      dispatch(
+        paymentSucceeded({
+          ...latest,
+          message: latest.message ?? transaction.message,
+        }),
+      );
+
+      if (latest.status === 'PENDING') {
+        Alert.alert(
+          'Aún en proceso',
+          'Wompi todavía no confirmó el pago. Intenta de nuevo en unos segundos.',
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'No se pudo consultar',
+        error instanceof Error
+          ? error.message
+          : 'Error al consultar la transacción',
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handlePrimary = () => {
     if (variant === 'success') {
       Alert.alert(
         'Recibo',
-        'La descarga del recibo estará disponible cuando el backend esté en AWS (mock).',
+        'La descarga del recibo estará disponible pronto.',
       );
       return;
     }
@@ -140,7 +179,7 @@ export function TransactionResultScreen({ navigation }: Props) {
       navigation.navigate('Checkout');
       return;
     }
-    goHome();
+    void refreshStatus();
   };
 
   return (
@@ -228,20 +267,30 @@ export function TransactionResultScreen({ navigation }: Props) {
         <View style={styles.actions}>
           <Pressable
             accessibilityRole="button"
+            disabled={variant === 'pending' && refreshing}
             onPress={handlePrimary}
             style={({ pressed }) => [
               styles.primaryButton,
               pressed && styles.pressed,
+              variant === 'pending' && refreshing && styles.primaryDisabled,
             ]}
           >
-            <Text style={styles.primaryText}>
-              {variant === 'success' ? '⬇  ' : ''}
-              {copy.primaryLabel}
-            </Text>
+            {variant === 'pending' && refreshing ? (
+              <View style={styles.primaryBusy}>
+                <ActivityIndicator color={colors.white} />
+                <Text style={styles.primaryText}>Consultando…</Text>
+              </View>
+            ) : (
+              <Text style={styles.primaryText}>
+                {variant === 'success' ? '⬇  ' : ''}
+                {copy.primaryLabel}
+              </Text>
+            )}
           </Pressable>
 
           <Pressable
             accessibilityRole="button"
+            disabled={refreshing}
             onPress={goHome}
             style={({ pressed }) => [
               styles.secondaryButton,
@@ -389,9 +438,17 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 48,
     borderRadius: radii.lg,
-            backgroundColor: colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  primaryDisabled: {
+    opacity: 0.75,
+  },
+  primaryBusy: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   primaryText: {
     color: colors.white,
