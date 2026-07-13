@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing } from '../theme/colors';
 
@@ -19,7 +20,11 @@ export function BottomNavBar({ active, onHome, onCart }: Props) {
         onPress={onHome}
         style={[styles.item, active === 'home' && styles.itemActive]}
       >
-        <Text style={[styles.icon, active === 'home' && styles.iconActive]}>⌂</Text>
+        <Ionicons
+          name={active === 'home' ? 'home' : 'home-outline'}
+          size={22}
+          color={active === 'home' ? colors.brand : colors.onSurfaceVariant}
+        />
         <Text style={[styles.label, active === 'home' && styles.labelActive]}>
           Inicio
         </Text>
@@ -29,7 +34,11 @@ export function BottomNavBar({ active, onHome, onCart }: Props) {
         onPress={onCart}
         style={[styles.item, active === 'cart' && styles.itemActive]}
       >
-        <Text style={[styles.icon, active === 'cart' && styles.iconActive]}>👜</Text>
+        <Ionicons
+          name={active === 'cart' ? 'cart' : 'cart-outline'}
+          size={22}
+          color={active === 'cart' ? colors.brand : colors.onSurfaceVariant}
+        />
         <Text style={[styles.label, active === 'cart' && styles.labelActive]}>
           Carrito
         </Text>
@@ -59,6 +68,7 @@ const styles = StyleSheet.create({
   item: {
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 2,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radii.lg,
@@ -67,14 +77,6 @@ const styles = StyleSheet.create({
   itemActive: {
     backgroundColor: colors.secondaryContainer,
     transform: [{ scale: 0.94 }],
-  },
-  icon: {
-    fontSize: 18,
-    color: colors.onSurfaceVariant,
-    marginBottom: 2,
-  },
-  iconActive: {
-    color: colors.brand,
   },
   label: {
     fontFamily: 'Inter_500Medium',

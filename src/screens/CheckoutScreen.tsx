@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -100,7 +101,7 @@ export function CheckoutScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Cart')}
           style={styles.headerButton}
         >
-          <Text style={styles.headerIcon}>←</Text>
+          <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
         </Pressable>
         <Text style={styles.headerTitle}>Checkout</Text>
         <Pressable
@@ -108,7 +109,7 @@ export function CheckoutScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Cart')}
           style={styles.headerButton}
         >
-          <Text style={styles.headerIcon}>🛒</Text>
+          <Ionicons name="cart-outline" size={22} color={colors.onSurface} />
         </Pressable>
       </View>
 
@@ -131,9 +132,14 @@ export function CheckoutScreen({ navigation }: Props) {
           </View>
           <View style={styles.summaryRight}>
             <Text style={styles.summaryTotal}>{formatCop(total)} COP</Text>
-            <Text style={styles.detailsLink}>
-              Detalles {detailsOpen ? '▴' : '▾'}
-            </Text>
+            <View style={styles.detailsLinkRow}>
+              <Text style={styles.detailsLink}>Detalles</Text>
+              <Ionicons
+                name={detailsOpen ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={colors.brand}
+              />
+            </View>
           </View>
         </Pressable>
 
@@ -150,7 +156,7 @@ export function CheckoutScreen({ navigation }: Props) {
           <Pressable onPress={openSelectionSheet} style={styles.methodCard}>
             <View style={styles.methodLeft}>
               <View style={styles.methodIconBox}>
-                <Text style={styles.methodIcon}>💳</Text>
+                <Ionicons name="card-outline" size={22} color={colors.brand} />
               </View>
               <View style={styles.methodCopy}>
                 {selectedCard ? (
@@ -175,12 +181,20 @@ export function CheckoutScreen({ navigation }: Props) {
                 )}
               </View>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.onSurfaceVariant}
+            />
           </Pressable>
         </View>
 
         <View style={styles.securityBox}>
-          <Text style={styles.securityIcon}>🛡</Text>
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={20}
+            color={colors.brand}
+          />
           <Text style={styles.securityText}>
             Tu transacción está protegida por encriptación de grado bancario.
             GreenPay asegura tus datos.
@@ -251,10 +265,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerIcon: {
-    fontSize: 20,
-    color: colors.onSurface,
-  },
   headerTitle: {
     fontFamily: 'Inter_600SemiBold',
     fontSize: 20,
@@ -305,8 +315,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.brand,
   },
-  detailsLink: {
+  detailsLinkRow: {
     marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  detailsLink: {
     fontFamily: 'Inter_500Medium',
     fontSize: 12,
     color: colors.brand,
@@ -354,9 +369,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  methodIcon: {
-    fontSize: 18,
-  },
   methodCopy: {
     flex: 1,
   },
@@ -377,11 +389,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 6,
   },
-  chevron: {
-    fontSize: 28,
-    color: colors.outline,
-    marginLeft: spacing.sm,
-  },
   securityBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -391,9 +398,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(97, 249, 187, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(0, 108, 74, 0.2)',
-  },
-  securityIcon: {
-    fontSize: 18,
   },
   securityText: {
     flex: 1,

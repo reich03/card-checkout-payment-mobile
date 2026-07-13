@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -126,7 +127,9 @@ function CardOption({ card, selected, onPress }: CardOptionProps) {
         </Text>
       </View>
       <View style={[styles.radio, selected && styles.radioSelected]}>
-        {selected ? <Text style={styles.check}>✓</Text> : null}
+        {selected ? (
+          <Ionicons name="checkmark" size={14} color={colors.white} />
+        ) : null}
       </View>
     </Pressable>
   );
@@ -241,11 +244,6 @@ const styles = StyleSheet.create({
   radioSelected: {
     backgroundColor: colors.brand,
     borderColor: colors.brand,
-  },
-  check: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: '700',
   },
   confirmButton: {
     height: 56,

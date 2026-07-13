@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing } from '../theme/colors';
 
 type Props = {
@@ -17,7 +18,7 @@ export function HomeHeader({ count, onPressCart }: Props) {
         onPress={onPressCart}
         style={styles.cartButton}
       >
-        <Text style={styles.cartIcon}>🛒</Text>
+        <Ionicons name="cart-outline" size={24} color={colors.onSurface} />
         {count > 0 ? (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>
@@ -51,9 +52,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radii.full,
-  },
-  cartIcon: {
-    fontSize: 22,
   },
   badge: {
     position: 'absolute',
