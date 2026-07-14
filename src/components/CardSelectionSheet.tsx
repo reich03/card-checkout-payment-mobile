@@ -1,10 +1,10 @@
 import { forwardRef, useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetView,
+  BottomSheetScrollView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { CardBrandBadge } from './CardBrandBadge';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   confirmPaymentMethod,
+  removeSavedCard,
   selectDraftCard,
   selectDraftSelectedCardId,
   selectSavedCards,
@@ -31,7 +32,7 @@ export const CardSelectionSheet = forwardRef<BottomSheetModal, Props>(
     const insets = useSafeAreaInsets();
     const cards = useAppSelector(selectSavedCards);
     const draftId = useAppSelector(selectDraftSelectedCardId);
-    const snapPoints = useMemo(() => ['52%'], []);
+    const snapPoints = useMemo(() => ['58%'], []);
 
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -47,8 +48,27 @@ export const CardSelectionSheet = forwardRef<BottomSheetModal, Props>(
     );
 
     const handleConfirm = () => {
+      if (!draftId) {
+        Alert.alert('Sin tarjeta', 'Selecciona o añade una tarjeta para continuar.');
+        return;
+      }
       dispatch(confirmPaymentMethod());
       onConfirmed();
+    };
+
+    const handleDelete = (card: SavedCard) => {
+      Alert.alert(
+        'Eliminar tarjeta',
+        `¿Quieres quitar ${card.label} •••• ${card.last4}?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Eliminar',
+            style: 'destructive',
+            onPress: () => dispatch(removeSavedCard(card.id)),
+          },
+        ],
+      );
     };
 
     return (
@@ -62,26 +82,36 @@ export const CardSelectionSheet = forwardRef<BottomSheetModal, Props>(
         backgroundStyle={styles.sheet}
         onDismiss={onDismiss}
       >
-        <BottomSheetView
-          style={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}
+        <BottomSheetScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: Math.max(insets.bottom, spacing.xl) },
+          ]}
         >
           <View style={styles.header}>
             <Text style={styles.title}>Selecciona tarjeta</Text>
             <Pressable onPress={onAddNew} style={styles.addButton}>
-              <Text style={styles.addIcon}>＋</Text>
+              <Ionicons name="add" size={16} color={colors.brand} />
               <Text style={styles.addText}>Añadir nueva</Text>
             </Pressable>
           </View>
 
           <View style={styles.list}>
-            {cards.map((card) => (
-              <CardOption
-                key={card.id}
-                card={card}
-                selected={card.id === draftId}
-                onPress={() => dispatch(selectDraftCard(card.id))}
-              />
-            ))}
+            {cards.length === 0 ? (
+              <Text style={styles.empty}>
+                No hay tarjetas guardadas. Añade una para continuar.
+              </Text>
+            ) : (
+              cards.map((card) => (
+                <CardOption
+                  key={card.id}
+                  card={card}
+                  selected={card.id === draftId}
+                  onPress={() => dispatch(selectDraftCard(card.id))}
+                  onDelete={() => handleDelete(card)}
+                />
+              ))
+            )}
           </View>
 
           <Pressable
@@ -90,11 +120,13 @@ export const CardSelectionSheet = forwardRef<BottomSheetModal, Props>(
             style={({ pressed }) => [
               styles.confirmButton,
               pressed && styles.confirmPressed,
+              cards.length === 0 && styles.confirmDisabled,
             ]}
+            disabled={cards.length === 0}
           >
             <Text style={styles.confirmText}>Confirmar método</Text>
           </Pressable>
-        </BottomSheetView>
+        </BottomSheetScrollView>
       </BottomSheetModal>
     );
   },
@@ -104,9 +136,10 @@ type CardOptionProps = {
   card: SavedCard;
   selected: boolean;
   onPress: () => void;
+  onDelete: () => void;
 };
 
-function CardOption({ card, selected, onPress }: CardOptionProps) {
+function CardOption({ card, selected, onPress, onDelete }: CardOptionProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -126,6 +159,18 @@ function CardOption({ card, selected, onPress }: CardOptionProps) {
           Expira {card.expMonth}/{card.expYear}
         </Text>
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Eliminar ${card.label} ${card.last4}`}
+        hitSlop={8}
+        onPress={(event) => {
+          event.stopPropagation?.();
+          onDelete();
+        }}
+        style={styles.deleteButton}
+      >
+        <Ionicons name="trash-outline" size={18} color={colors.error} />
+      </Pressable>
       <View style={[styles.radio, selected && styles.radioSelected]}>
         {selected ? (
           <Ionicons name="checkmark" size={14} color={colors.white} />
@@ -173,11 +218,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  addIcon: {
-    color: colors.brand,
-    fontSize: 16,
-    fontWeight: '700',
-  },
   addText: {
     color: colors.brand,
     fontFamily: 'Inter_700Bold',
@@ -188,10 +228,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginBottom: spacing.xl,
   },
+  empty: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.onSurfaceVariant,
+    paddingVertical: spacing.md,
+  },
   cardOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
     padding: spacing.md,
     borderRadius: radii.lg,
   },
@@ -204,7 +251,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.outlineVariant,
     backgroundColor: colors.surface,
-    opacity: 0.65,
+    opacity: 0.9,
   },
   logoBox: {
     width: 48,
@@ -232,6 +279,13 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: colors.onSurfaceVariant,
   },
+  deleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   radio: {
     width: 24,
     height: 24,
@@ -251,6 +305,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  confirmDisabled: {
+    opacity: 0.45,
   },
   confirmPressed: {
     transform: [{ scale: 0.97 }],

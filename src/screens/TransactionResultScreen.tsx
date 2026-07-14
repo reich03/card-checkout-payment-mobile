@@ -110,7 +110,7 @@ export function TransactionResultScreen({ navigation }: Props) {
       iconBg: 'rgba(97, 249, 187, 0.2)',
       icon: 'checkmark',
       iconColor: colors.brandBright,
-      primaryLabel: 'Descargar Recibo',
+      primaryLabel: 'Ver Recibo',
       primaryIcon: 'download-outline',
       secondaryLabel: 'Volver a la tienda',
       footer: 'Recibirás un correo electrónico con los detalles del pago.',

@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { CardBrand } from '../types/payment';
 import { colors, radii } from '../theme/colors';
+import { CardBrandLogo } from './CardBrandLogo';
 
 type Props = {
   brand: CardBrand;
@@ -9,6 +10,7 @@ type Props = {
 
 export function CardBrandBadge({ brand, size = 'md' }: Props) {
   const isVisa = brand === 'visa';
+  const logoWidth = size === 'sm' ? (isVisa ? 34 : 28) : isVisa ? 42 : 36;
 
   return (
     <View
@@ -18,46 +20,34 @@ export function CardBrandBadge({ brand, size = 'md' }: Props) {
         isVisa ? styles.visa : styles.mastercard,
       ]}
     >
-      <Text style={[styles.text, size === 'sm' && styles.textSm]}>
-        {isVisa ? 'VISA' : 'MC'}
-      </Text>
+      <CardBrandLogo brand={brand} width={logoWidth} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
-    borderRadius: 4,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.outlineVariant,
+    overflow: 'hidden',
+    paddingHorizontal: 6,
     backgroundColor: colors.white,
   },
   sm: {
-    width: 32,
-    height: 20,
+    minWidth: 40,
+    height: 24,
   },
   md: {
-    width: 40,
-    height: 28,
+    minWidth: 48,
+    height: 32,
   },
   visa: {
-    backgroundColor: '#1A1F71',
-    borderColor: '#1A1F71',
+    backgroundColor: colors.white,
   },
   mastercard: {
-    backgroundColor: '#EB001B',
-    borderColor: '#EB001B',
-  },
-  text: {
-    color: colors.white,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  textSm: {
-    fontSize: 8,
+    backgroundColor: colors.white,
   },
 });

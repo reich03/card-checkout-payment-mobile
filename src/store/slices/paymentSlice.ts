@@ -92,6 +92,19 @@ const paymentSlice = createSlice({
       state.installments = action.payload.installments;
       state.chargeableCard = action.payload.chargeable;
     },
+    removeSavedCard(state, action: PayloadAction<string>) {
+      const cardId = action.payload;
+      state.savedCards = state.savedCards.filter((card) => card.id !== cardId);
+
+      if (state.draftSelectedCardId === cardId) {
+        state.draftSelectedCardId = state.savedCards[0]?.id ?? null;
+      }
+
+      if (state.selectedCard?.id === cardId) {
+        state.selectedCard = null;
+        state.chargeableCard = null;
+      }
+    },
     clearPaymentMethod(state) {
       state.selectedCard = null;
       state.chargeableCard = null;
@@ -149,6 +162,7 @@ export const {
   selectDraftCard,
   confirmPaymentMethod,
   addSavedCard,
+  removeSavedCard,
   clearPaymentMethod,
   paymentStarted,
   paymentSucceeded,

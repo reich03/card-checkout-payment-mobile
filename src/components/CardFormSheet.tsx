@@ -16,6 +16,7 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CardBrandBadge } from './CardBrandBadge';
+import { CardPreview } from './CardPreview';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { selectCartTotal } from '../store/slices/cartSlice';
 import { addSavedCard } from '../store/slices/paymentSlice';
@@ -56,8 +57,9 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
     const dispatch = useAppDispatch();
     const insets = useSafeAreaInsets();
     const total = useAppSelector(selectCartTotal);
-    const snapPoints = useMemo(() => ['88%'], []);
+    const snapPoints = useMemo(() => ['92%'], []);
     const [installmentsOpen, setInstallmentsOpen] = useState(false);
+    const [cvvFocused, setCvvFocused] = useState(false);
 
     const {
       control,
@@ -78,6 +80,9 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
     });
 
     const numberValue = watch('number');
+    const holderNameValue = watch('holderName');
+    const expiryValue = watch('expiry');
+    const cvvValue = watch('cvv');
     const installmentsValue = watch('installments');
     const brand = detectCardBrand(numberValue);
 
@@ -162,6 +167,15 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
           ]}
           keyboardShouldPersistTaps="handled"
         >
+          <CardPreview
+            number={numberValue}
+            holderName={holderNameValue}
+            expiry={expiryValue}
+            cvv={cvvValue}
+            brand={brand}
+            showBack={cvvFocused}
+          />
+
           <FieldLabel>Número de tarjeta</FieldLabel>
           <Controller
             control={control}
@@ -182,6 +196,7 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
                   <TextInput
                     value={value}
                     onBlur={onBlur}
+                    onFocus={() => setCvvFocused(false)}
                     onChangeText={(text) => onChange(formatCardNumber(text))}
                     placeholder="0000 0000 0000 0000"
                     placeholderTextColor={colors.onSurfaceVariant}
@@ -215,8 +230,9 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
                 <TextInput
                   value={value}
                   onBlur={onBlur}
+                  onFocus={() => setCvvFocused(false)}
                   onChangeText={(text) => onChange(text.toUpperCase())}
-                  placeholder="Como aparece en el plástico"
+                  placeholder="Nombre del titular"
                   placeholderTextColor={colors.onSurfaceVariant}
                   autoCapitalize="characters"
                   style={[
@@ -248,6 +264,7 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
                     <TextInput
                       value={value}
                       onBlur={onBlur}
+                      onFocus={() => setCvvFocused(false)}
                       onChangeText={(text) => onChange(formatExpiry(text))}
                       placeholder="08/28"
                       placeholderTextColor={colors.onSurfaceVariant}
@@ -281,7 +298,11 @@ export const CardFormSheet = forwardRef<BottomSheetModal, Props>(
                   <View>
                     <TextInput
                       value={value}
-                      onBlur={onBlur}
+                      onFocus={() => setCvvFocused(true)}
+                      onBlur={() => {
+                        setCvvFocused(false);
+                        onBlur();
+                      }}
                       onChangeText={(text) =>
                         onChange(onlyDigits(text).slice(0, 4))
                       }
