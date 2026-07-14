@@ -14,6 +14,26 @@ Instala el build de release (no requiere cable ni Android Studio):
 | API | `http://18.224.46.220:3000` |
 | Notas | Firmado con keystore de debug (demo). Cleartext HTTP permitido hacia la IP del backend. En el teléfono: permitir “Instalar apps desconocidas” si Android lo pide. |
 
+## Demo video
+
+Flujo completo de la app (splash → pago exitoso):
+
+**[▶ Ver / descargar video (`docs/demo/videoapp.mov`)](./docs/demo/videoapp.mov)** (~26 MB)
+
+> GitHub **no reproduce** `.mov` embebido dentro del README (lo bloquea).  
+> Al hacer clic en el enlace, GitHub abre el archivo con su **reproductor nativo**.  
+> También puedes descargarlo y abrirlo en QuickTime / VLC.
+
+<details>
+<summary>Intento de embed (puede no verse en github.com)</summary>
+
+<video src="./docs/demo/videoapp.mov" controls width="360" playsinline>
+  Tu navegador no soporta video HTML5.
+  <a href="./docs/demo/videoapp.mov">Descargar videoapp.mov</a>
+</video>
+
+</details>
+
 ## Tech Stack
 
 | Technology | Version | Purpose |
