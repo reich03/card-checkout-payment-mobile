@@ -13,7 +13,6 @@ export function useCreateTransactionMutation() {
       createTransaction(payload),
     onSuccess: async (result: TransactionResult) => {
       queryClient.setQueryData(queryKeys.transaction(result.id), result);
-      // Stock only changes on APPROVED; still refresh so Home shows latest.
       if (
         result.status === 'APPROVED' ||
         result.status === 'PENDING' ||

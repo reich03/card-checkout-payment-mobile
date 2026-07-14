@@ -36,7 +36,6 @@ async function fetchWithTimeout(
   }
 }
 
-/** GET /api/products */
 export async function fetchProducts(): Promise<Product[]> {
   const url = apiUrl('/api/products');
 

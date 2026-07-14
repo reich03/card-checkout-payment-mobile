@@ -38,7 +38,6 @@ const cartSlice = createSlice({
       if (existing) {
         if (existing.quantity < existing.product.stock) {
           existing.quantity += 1;
-          // Keep product snapshot fresh (price/stock) when adding again.
           existing.product = product;
         }
         return;

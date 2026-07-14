@@ -46,7 +46,6 @@ export function HomeScreen({ navigation }: Props) {
   } = useProductsQuery();
   const cartCount = useAppSelector(selectCartCount);
 
-  // F-03: when returning to Home after payment, pull fresh stock.
   useFocusEffect(
     useCallback(() => {
       void refetch();
@@ -106,9 +105,9 @@ export function HomeScreen({ navigation }: Props) {
               <View style={styles.searchWrap}>
                 <SearchBar value={query} onChangeText={setQuery} />
               </View>
-              <View style={styles.bannerWrap}>
+             {/*<View style={styles.bannerWrap}>
                 <PromoBanner />
-              </View>
+              </View>*/}
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Nuestros Productos</Text>
                 <Text style={styles.tune}>⚙︎</Text>

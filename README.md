@@ -2,6 +2,18 @@
 
 Cross-platform mobile checkout built with **Expo SDK 57** + **React Native 0.86** + **TypeScript**. Brand: **GreenPay** — pagos simples y seguros.
 
+## Download APK (Android)
+
+Instala el build de release (no requiere cable ni Android Studio):
+
+**[⬇ Descargar GreenPay 1.0.0 (APK release)](./releases/GreenPay-1.0.0-release.apk)**
+
+| | |
+|---|---|
+| Archivo | [`releases/GreenPay-1.0.0-release.apk`](./releases/GreenPay-1.0.0-release.apk) (~96 MB) |
+| API | `http://18.224.46.220:3000` |
+| Notas | Firmado con keystore de debug (demo). Cleartext HTTP permitido hacia la IP del backend. En el teléfono: permitir “Instalar apps desconocidas” si Android lo pide. |
+
 ## Tech Stack
 
 | Technology | Version | Purpose |
@@ -158,8 +170,13 @@ npm run android:release
 npm run android:install
 ```
 
-- Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk`
-- Release APK: `android/app/build/outputs/apk/release/app-release.apk`
+- Debug APK (local build): `android/app/build/outputs/apk/debug/app-debug.apk`
+- Release APK (local build): `android/app/build/outputs/apk/release/app-release.apk`
+- **Release APK (descarga del repo):** [`releases/GreenPay-1.0.0-release.apk`](./releases/GreenPay-1.0.0-release.apk)
+
+> The API on EC2 uses **HTTP** (cleartext). Release builds allow it via
+> `android:usesCleartextTraffic` + `network_security_config.xml` for `18.224.46.220`.
+> After changing those files, rebuild and refresh `releases/GreenPay-1.0.0-release.apk`.
 
 ### iOS (Xcode / CocoaPods)
 

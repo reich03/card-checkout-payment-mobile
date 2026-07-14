@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Allow HTTP to the Nest API on EC2 (no TLS yet). Remove when HTTPS is enabled. -->
+<network-security-config>
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="true">18.224.46.220</domain>
+    <domain includeSubdomains="true">localhost</domain>
+    <domain includeSubdomains="true">10.0.2.2</domain>
+  </domain-config>
+  <!-- Sandbox / demo: API is HTTP on Elastic IP -->
+  <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

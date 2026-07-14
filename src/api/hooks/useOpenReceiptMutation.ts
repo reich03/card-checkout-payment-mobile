@@ -9,7 +9,6 @@ import {
 export function useOpenReceiptMutation() {
   return useMutation({
     mutationFn: async (transactionId: string): Promise<TransactionReceipt> => {
-      // Validate receipt exists / APPROVED on the API, then open printable HTML.
       const receipt = await fetchTransactionReceipt(transactionId);
       await WebBrowser.openBrowserAsync(receiptHtmlUrl(transactionId), {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
