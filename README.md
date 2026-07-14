@@ -24,6 +24,43 @@ Cross-platform mobile checkout built with **Expo SDK 57** + **React Native 0.86*
 6. **Payment Summary** — Order review + confirm payment (bottom sheet)
 7. **Transaction Result** — Success / Error / Pending status
 
+## Screenshots
+
+Capturas del flujo completo en **iPhone 17** (simulador). Archivos en [`docs/screenshots/`](./docs/screenshots/).
+
+### 1. Splash
+<img src="./docs/screenshots/01-splash.png" alt="Splash" width="280" />
+
+### 2. Home (catálogo)
+<img src="./docs/screenshots/02-home.png" alt="Home" width="280" />
+
+### 3. Carrito
+<img src="./docs/screenshots/03-cart.png" alt="Cart" width="280" />
+
+### 4. Checkout
+<img src="./docs/screenshots/04-checkout.png" alt="Checkout" width="280" />
+
+### 5. Seleccionar tarjeta
+<img src="./docs/screenshots/05-card-selection.png" alt="Card selection" width="280" />
+
+### 6. Crear tarjeta
+<img src="./docs/screenshots/06-card-form.png" alt="Card form" width="280" />
+
+### 7. Resumen de compra
+<img src="./docs/screenshots/07-payment-summary.png" alt="Payment summary" width="280" />
+
+### 8. Pago en proceso
+<img src="./docs/screenshots/08-payment-pending.png" alt="Payment pending" width="280" />
+
+### 9. Pago exitoso
+<img src="./docs/screenshots/09-payment-success.png" alt="Payment success" width="280" />
+
+### Responsive — iPhone SE (2020)
+
+Mínimo soportado **375×667**. Home en SE:
+
+<img src="./docs/screenshots/responsive-iphone-se-2020.png" alt="Home on iPhone SE 2020" width="280" />
+
 ## Project Structure
 
 ```
@@ -93,6 +130,21 @@ You can work either through Expo or by entering the native folders.
 
 ### Android (Gradle)
 
+Gradle needs the Android SDK. On this machine the SDK is usually at
+`~/Library/Android/sdk`. Create `android/local.properties` (gitignored):
+
+```properties
+sdk.dir=/Users/<YOU>/Library/Android/sdk
+```
+
+Or export once in your shell (use **JDK 17–21**, not Java 25 — Android Studio’s JBR works):
+
+```bash
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+```
+
 ```bash
 # Debug APK
 npm run android:assemble
@@ -106,7 +158,8 @@ npm run android:release
 npm run android:install
 ```
 
-Release APK path: `android/app/build/outputs/apk/release/app-release.apk`
+- Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk`
+- Release APK: `android/app/build/outputs/apk/release/app-release.apk`
 
 ### iOS (Xcode / CocoaPods)
 
@@ -131,17 +184,41 @@ npm run prebuild:clean  # wipe and regenerate android/ + ios/
 
 > Prefer small native edits carefully: `prebuild --clean` will overwrite generated files.
 
-## Test Coverage
+## Unit tests (Jest) — mandatory >80% coverage
 
-> Coverage results will be added here after implementation.
+Unit tests run with **Jest** + **jest-expo**. Covered areas: Redux slices, card validation utils, API services/hooks, and UI components/screens (RTL).
+
+```bash
+# Run all unit tests
+npm test
+
+# Run with coverage report
+npm run test:coverage
+```
+
+### Coverage results
+
+Generated with `npm run test:coverage` (Jest `--coverage`). **Requirement met: >80%.**
+
+| Metric | Coverage |
+|---|---|
+| Statements | **92.91%** (695/748) |
+| Branches | **88.38%** (449/508) |
+| Functions | **85.30%** (209/245) |
+| Lines | **93.75%** (676/721) |
 
 ```
------------------------------|---------|----------|---------|---------|
-File                         | % Stmts | % Branch | % Funcs | % Lines |
------------------------------|---------|----------|---------|---------|
-All files                    |   XX.XX |    XX.XX |   XX.XX |   XX.XX |
------------------------------|---------|----------|---------|---------|
+=============================== Coverage summary ===============================
+Statements   : 92.91% ( 695/748 )
+Branches     : 88.38% ( 449/508 )
+Functions    : 85.3% ( 209/245 )
+Lines        : 93.75% ( 676/721 )
+================================================================================
 ```
+
+- **Test suites:** 33 passed  
+- **Tests:** 141 passed  
+- Specs live under `__tests__/` (Jest).
 
 ## Responsive Design
 
