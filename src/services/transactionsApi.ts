@@ -73,7 +73,6 @@ function extractErrorMessage(body: unknown, status: number): string {
   return `Error al procesar el pago (${status})`;
 }
 
-/** POST /api/transactions */
 export async function createTransaction(
   payload: CreateTransactionPayload,
 ): Promise<TransactionResult> {

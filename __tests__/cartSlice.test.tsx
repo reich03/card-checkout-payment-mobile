@@ -2,9 +2,11 @@ import cartReducer, {
   addToCart,
   clearCart,
   decrementQuantity,
+  hydrateCart,
   incrementQuantity,
   removeFromCart,
   selectCartCount,
+  selectCartItems,
   selectCartSubtotal,
   selectCartTotal,
   syncCartWithCatalog,
@@ -100,6 +102,58 @@ test('removes an item and clears the cart', () => {
   expect(state.items[0].product.id).toBe(mug.id);
 
   state = cartReducer(state, clearCart());
+  expect(state.items).toHaveLength(0);
+});
+
+test('addToCart refreshes the product snapshot when adding an existing item', () => {
+  let state = cartReducer(undefined, addToCart(coffee));
+  const updatedCoffee: Product = { ...coffee, price: 50000, stock: 20 };
+  state = cartReducer(state, addToCart(updatedCoffee));
+
+  expect(state.items[0].quantity).toBe(2);
+  expect(state.items[0].product.price).toBe(50000);
+});
+
+test('incrementQuantity and decrementQuantity are no-ops for unknown products', () => {
+  let state = cartReducer(undefined, addToCart(coffee));
+  state = cartReducer(state, incrementQuantity('unknown-id'));
+  state = cartReducer(state, decrementQuantity('unknown-id'));
+
+  expect(state.items[0].quantity).toBe(1);
+});
+
+test('syncCartWithCatalog keeps items untouched when missing from the catalog payload', () => {
+  let state = cartReducer(undefined, addToCart(coffee));
+  state = cartReducer(state, syncCartWithCatalog([mug]));
+
+  expect(state.items).toHaveLength(1);
+  expect(state.items[0].product.id).toBe(coffee.id);
+});
+
+test('hydrateCart restores persisted items and clamps to current stock', () => {
+  let state = cartReducer(undefined, { type: 'unknown' });
+  state = cartReducer(
+    state,
+    hydrateCart({
+      items: [
+        { product: coffee, quantity: 15 },
+        { product: { ...mug, stock: 0 }, quantity: 2 },
+      ],
+    }),
+  );
+
+  expect(selectCartItems({ cart: state })).toHaveLength(1);
+  expect(state.items[0].product.id).toBe(coffee.id);
+  expect(state.items[0].quantity).toBe(coffee.stock);
+});
+
+test('hydrateCart defaults to an empty list when items are missing', () => {
+  let state = cartReducer(undefined, { type: 'unknown' });
+  state = cartReducer(
+    state,
+    hydrateCart({ items: undefined as unknown as [] }),
+  );
+
   expect(state.items).toHaveLength(0);
 });
 

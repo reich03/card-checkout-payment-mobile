@@ -152,7 +152,6 @@ const paymentSlice = createSlice({
       state.selectedCard = payload.selectedCard ?? null;
       state.customerEmail = payload.customerEmail ?? null;
       state.installments = payload.installments ?? 1;
-      // Never hydrate PAN/CVV from disk.
       state.chargeableCard = null;
     },
   },
